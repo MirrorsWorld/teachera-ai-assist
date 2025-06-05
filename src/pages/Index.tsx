@@ -1,11 +1,26 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useState } from "react";
+import Header from "../components/Header";
+import Sidebar from "../components/Sidebar";
+import MainContent from "../components/MainContent";
 
 const Index = () => {
+  const [activeTitle, setActiveTitle] = useState("我是你的A教师助理TeacherA");
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen flex flex-col font-roboto">
+      <Header />
+      
+      <div className="flex flex-1 max-w-7xl mx-auto w-full p-5 gap-6 h-[calc(100vh-80px)]">
+        <div className="hidden lg:block">
+          <Sidebar />
+        </div>
+        
+        <div className="flex-1">
+          <MainContent activeTitle={activeTitle} />
+        </div>
+        
+        {/* Mobile sidebar overlay could be added here */}
       </div>
     </div>
   );
