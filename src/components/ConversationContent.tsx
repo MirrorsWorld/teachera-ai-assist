@@ -1,6 +1,6 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Heart, Trash2, MoreVertical, Send, Upload, Image, Code, Eye } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Message {
   id: number;
@@ -225,64 +225,66 @@ const ConversationContent = ({
       </div>
 
       {/* 对话内容 */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-        {messages.map((message) => (
-          <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
-              <div className={`p-4 rounded-lg ${
-                message.type === 'user' 
-                  ? 'bg-primary text-white ml-auto' 
-                  : 'bg-white text-gray-900 shadow-sm'
-              }`}>
-                {message.image && (
-                  <img 
-                    src={message.image} 
-                    alt="上传的图片" 
-                    className="max-w-full h-auto rounded-lg mb-2"
-                  />
-                )}
-                
-                {/* HTML内容渲染或源码显示 */}
-                {message.htmlContent && message.type === 'assistant' && (
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-600">生成内容:</span>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => toggleHtmlSource(message.id)}
-                          className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-                          title={showHtmlSource[message.id] ? "查看渲染结果" : "查看HTML源码"}
-                        >
-                          {showHtmlSource[message.id] ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
-                        </button>
+      <ScrollArea className="flex-1 bg-gray-50">
+        <div className="p-6 space-y-4">
+          {messages.map((message) => (
+            <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
+                <div className={`p-4 rounded-lg ${
+                  message.type === 'user' 
+                    ? 'bg-primary text-white ml-auto' 
+                    : 'bg-white text-gray-900 shadow-sm'
+                }`}>
+                  {message.image && (
+                    <img 
+                      src={message.image} 
+                      alt="上传的图片" 
+                      className="max-w-full h-auto rounded-lg mb-2"
+                    />
+                  )}
+                  
+                  {/* HTML内容渲染或源码显示 */}
+                  {message.htmlContent && message.type === 'assistant' && (
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-600">生成内容:</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => toggleHtmlSource(message.id)}
+                            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                            title={showHtmlSource[message.id] ? "查看渲染结果" : "查看HTML源码"}
+                          >
+                            {showHtmlSource[message.id] ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
+                      
+                      {showHtmlSource[message.id] ? (
+                        <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto">
+                          <code>{message.htmlContent}</code>
+                        </pre>
+                      ) : (
+                        <div 
+                          className="border rounded-lg overflow-hidden"
+                          dangerouslySetInnerHTML={{ __html: message.htmlContent }}
+                        />
+                      )}
                     </div>
-                    
-                    {showHtmlSource[message.id] ? (
-                      <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto">
-                        <code>{message.htmlContent}</code>
-                      </pre>
-                    ) : (
-                      <div 
-                        className="border rounded-lg overflow-hidden"
-                        dangerouslySetInnerHTML={{ __html: message.htmlContent }}
-                      />
-                    )}
-                  </div>
-                )}
-                
-                <div className="whitespace-pre-wrap">{message.content}</div>
-              </div>
-              <div className={`text-xs text-gray-500 mt-1 ${
-                message.type === 'user' ? 'text-right' : 'text-left'
-              }`}>
-                {message.timestamp}
+                  )}
+                  
+                  <div className="whitespace-pre-wrap">{message.content}</div>
+                </div>
+                <div className={`text-xs text-gray-500 mt-1 ${
+                  message.type === 'user' ? 'text-right' : 'text-left'
+                }`}>
+                  {message.timestamp}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
 
       {/* 输入区域 */}
       <div className="p-6 border-t border-gray-200 bg-white rounded-b-xl">
