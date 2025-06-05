@@ -1,9 +1,12 @@
 
 import { User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
+  const navigate = useNavigate();
+
   const handleLogin = () => {
-    console.log("打开登录/注册界面");
+    navigate("/login");
   };
 
   return (

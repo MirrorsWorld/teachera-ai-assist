@@ -1,12 +1,5 @@
 
-interface Conversation {
-  id: number;
-  title: string;
-  subject: string;
-  date: string;
-  time: string;
-  active: boolean;
-}
+import type { Conversation } from "../pages/Index";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -27,8 +20,11 @@ const ConversationList = ({ conversations, onConversationClick }: ConversationLi
           }`}
           style={{ animationDelay: `${index * 0.1}s` }}
         >
-          <div className="font-medium mb-1 text-gray-900">
+          <div className="font-medium mb-1 text-gray-900 flex items-center gap-2">
             {conversation.title}
+            {conversation.favorited && (
+              <span className="text-red-500 text-sm">♥</span>
+            )}
           </div>
           <div className="text-sm text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">
             {conversation.subject}
