@@ -1,6 +1,6 @@
 
-import { useState, useRef } from "react";
-import { Heart, Trash2, MoreVertical, Send, Upload, Image } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Heart, Trash2, MoreVertical, Send, Upload, Image, Code, Eye } from "lucide-react";
 
 interface Message {
   id: number;
@@ -8,6 +8,7 @@ interface Message {
   content: string;
   timestamp: string;
   image?: string;
+  htmlContent?: string; // 添加HTML内容支持
 }
 
 interface ConversationContentProps {
@@ -28,7 +29,9 @@ const ConversationContent = ({
   const [showActions, setShowActions] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showHtmlSource, setShowHtmlSource] = useState<{ [key: number]: boolean }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // 模拟对话消息数据
   const [messages, setMessages] = useState<Message[]>([
@@ -41,8 +44,22 @@ const ConversationContent = ({
     {
       id: 2,
       type: 'assistant',
-      content: '好的，我们来复习一下二次函数的基本性质。二次函数的一般形式是 f(x) = ax² + bx + c (a ≠ 0)。\n\n主要性质包括：\n1. 开口方向：当a > 0时开口向上，当a < 0时开口向下\n2. 对称轴：x = -b/(2a)\n3. 顶点坐标：(-b/(2a), (4ac-b²)/(4a))\n4. 最值：当a > 0时有最小值，当a < 0时有最大值',
-      timestamp: '14:31'
+      content: '好的，我们来复习一下二次函数的基本性质。二次函数的一般形式是 f(x) = ax² + bx + c (a ≠ 0)。',
+      timestamp: '14:31',
+      htmlContent: `
+        <div style="background: linear-gradient(135deg, #f5f7ff 0%, #eef0f9 100%); padding: 20px; border-radius: 12px; margin: 10px 0;">
+          <h3 style="color: #4361ee; margin-bottom: 15px;">二次函数的基本性质</h3>
+          <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <p style="margin-bottom: 10px;"><strong>一般形式：</strong> f(x) = ax² + bx + c (a ≠ 0)</p>
+            <ul style="margin-left: 20px; line-height: 1.6;">
+              <li><strong>开口方向：</strong>当a > 0时开口向上，当a < 0时开口向下</li>
+              <li><strong>对称轴：</strong>x = -b/(2a)</li>
+              <li><strong>顶点坐标：</strong>(-b/(2a), (4ac-b²)/(4a))</li>
+              <li><strong>最值：</strong>当a > 0时有最小值，当a < 0时有最大值</li>
+            </ul>
+          </div>
+        </div>
+      `
     },
     {
       id: 3,
@@ -53,10 +70,41 @@ const ConversationContent = ({
     {
       id: 4,
       type: 'assistant',
-      content: '当然可以！让我们看一个具体例子：f(x) = 2x² - 4x + 1\n\n分析这个函数：\n• a = 2 > 0，所以开口向上\n• 对称轴：x = -(-4)/(2×2) = 1\n• 顶点坐标：(1, 2×1² - 4×1 + 1) = (1, -1)\n• 因为a > 0，所以函数有最小值-1\n\n这个函数的图像是一个开口向上的抛物线，顶点在(1, -1)处。',
-      timestamp: '14:33'
+      content: '当然可以！让我们看一个具体例子：f(x) = 2x² - 4x + 1',
+      timestamp: '14:33',
+      htmlContent: `
+        <div style="background: linear-gradient(135deg, #f5f7ff 0%, #eef0f9 100%); padding: 20px; border-radius: 12px; margin: 10px 0;">
+          <h3 style="color: #4361ee; margin-bottom: 15px;">具体例子：f(x) = 2x² - 4x + 1</h3>
+          <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div>
+                <h4 style="color: #3f37c9; margin-bottom: 10px;">分析过程：</h4>
+                <ul style="line-height: 1.8;">
+                  <li>a = 2 > 0，开口向上</li>
+                  <li>对称轴：x = -(-4)/(2×2) = 1</li>
+                  <li>顶点：(1, -1)</li>
+                  <li>最小值：-1</li>
+                </ul>
+              </div>
+              <div style="background: #f8f9ff; padding: 10px; border-radius: 6px;">
+                <h4 style="color: #3f37c9; margin-bottom: 10px;">图像特征：</h4>
+                <p style="margin: 0; line-height: 1.6;">开口向上的抛物线<br/>顶点在(1, -1)处<br/>在x=1处取得最小值</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `
     }
   ]);
+
+  // 自动滚动到底部
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleDelete = () => {
     if (window.confirm('确定要删除这个对话吗？')) {
@@ -90,7 +138,18 @@ const ConversationContent = ({
           id: messages.length + 2,
           type: 'assistant',
           content: '我理解了您的问题，让我来为您详细解答...',
-          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          htmlContent: `
+            <div style="background: linear-gradient(135deg, #f5f7ff 0%, #eef0f9 100%); padding: 20px; border-radius: 12px; margin: 10px 0;">
+              <h3 style="color: #4361ee; margin-bottom: 15px;">AI生成的可视化内容</h3>
+              <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <p style="margin-bottom: 10px;">这是一个示例HTML渲染结果，包含了格式化的内容展示。</p>
+                <div style="background: #e3f2fd; padding: 10px; border-left: 4px solid #2196f3; margin: 10px 0;">
+                  <strong>提示：</strong> 您可以点击代码图标查看HTML源代码
+                </div>
+              </div>
+            </div>
+          `
         };
         setMessages(prev => [...prev, aiReply]);
       }, 1000);
@@ -120,6 +179,13 @@ const ConversationContent = ({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const toggleHtmlSource = (messageId: number) => {
+    setShowHtmlSource(prev => ({
+      ...prev,
+      [messageId]: !prev[messageId]
+    }));
   };
 
   return (
@@ -175,6 +241,36 @@ const ConversationContent = ({
                     className="max-w-full h-auto rounded-lg mb-2"
                   />
                 )}
+                
+                {/* HTML内容渲染或源码显示 */}
+                {message.htmlContent && message.type === 'assistant' && (
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-600">生成内容:</span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => toggleHtmlSource(message.id)}
+                          className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                          title={showHtmlSource[message.id] ? "查看渲染结果" : "查看HTML源码"}
+                        >
+                          {showHtmlSource[message.id] ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {showHtmlSource[message.id] ? (
+                      <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto">
+                        <code>{message.htmlContent}</code>
+                      </pre>
+                    ) : (
+                      <div 
+                        className="border rounded-lg overflow-hidden"
+                        dangerouslySetInnerHTML={{ __html: message.htmlContent }}
+                      />
+                    )}
+                  </div>
+                )}
+                
                 <div className="whitespace-pre-wrap">{message.content}</div>
               </div>
               <div className={`text-xs text-gray-500 mt-1 ${
@@ -185,6 +281,7 @@ const ConversationContent = ({
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* 输入区域 */}
