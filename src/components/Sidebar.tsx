@@ -7,9 +7,17 @@ interface SidebarProps {
   conversations: Conversation[];
   onNewChat: () => void;
   onConversationClick: (conversation: Conversation) => void;
+  onDeleteConversation: (id: number) => void;
+  onFavoriteConversation: (id: number) => void;
 }
 
-const Sidebar = ({ conversations, onNewChat, onConversationClick }: SidebarProps) => {
+const Sidebar = ({ 
+  conversations, 
+  onNewChat, 
+  onConversationClick, 
+  onDeleteConversation, 
+  onFavoriteConversation 
+}: SidebarProps) => {
   return (
     <aside className="w-80 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-6 flex flex-col h-full lg:h-[calc(100vh-120px)]">
       <div className="flex flex-col gap-5 pb-5 border-b border-gray-200">
@@ -28,10 +36,14 @@ const Sidebar = ({ conversations, onNewChat, onConversationClick }: SidebarProps
         </button>
       </div>
       
-      <ConversationList 
-        conversations={conversations}
-        onConversationClick={onConversationClick}
-      />
+      <div className="flex-1 overflow-hidden">
+        <ConversationList 
+          conversations={conversations}
+          onConversationClick={onConversationClick}
+          onDeleteConversation={onDeleteConversation}
+          onFavoriteConversation={onFavoriteConversation}
+        />
+      </div>
     </aside>
   );
 };

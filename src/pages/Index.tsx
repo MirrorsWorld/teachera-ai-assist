@@ -18,6 +18,7 @@ export interface Conversation {
 }
 
 const Index = () => {
+  const [isLoggedIn] = useState(false); // 模拟登录状态，可以后续连接到真实的认证系统
   const [activeTitle, setActiveTitle] = useState("我是你的A教师助理TeacherA");
   const [viewMode, setViewMode] = useState<ViewMode>('welcome');
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
@@ -103,8 +104,8 @@ const Index = () => {
       ...prev.map(conv => ({ ...conv, active: false }))
     ]);
     setActiveTitle("新对话");
-    setViewMode('welcome');
-    setSelectedConversationId(null);
+    setViewMode('conversation');
+    setSelectedConversationId(newConversation.id);
   };
 
   const handleConversationClick = (conversation: Conversation) => {
@@ -142,16 +143,20 @@ const Index = () => {
     <div className="min-h-screen flex flex-col font-roboto">
       <Header />
       
-      <div className="flex flex-1 max-w-7xl mx-auto w-full p-5 gap-6 h-[calc(100vh-80px)]">
-        <div className="hidden lg:block">
-          <Sidebar 
-            conversations={conversations}
-            onNewChat={handleNewChat}
-            onConversationClick={handleConversationClick}
-          />
-        </div>
+      <div className={`flex flex-1 max-w-7xl mx-auto w-full p-5 gap-6 h-[calc(100vh-80px)] ${!isLoggedIn ? 'justify-center' : ''}`}>
+        {isLoggedIn && (
+          <div className="hidden lg:block">
+            <Sidebar 
+              conversations={conversations}
+              onNewChat={handleNewChat}
+              onConversationClick={handleConversationClick}
+              onDeleteConversation={handleDeleteConversation}
+              onFavoriteConversation={handleFavoriteConversation}
+            />
+          </div>
+        )}
         
-        <div className="flex-1">
+        <div className={`${isLoggedIn ? 'flex-1' : 'w-full max-w-4xl'}`}>
           {viewMode === 'welcome' ? (
             <MainContent activeTitle={activeTitle} />
           ) : (
@@ -168,8 +173,6 @@ const Index = () => {
             )
           )}
         </div>
-        
-        {/* Mobile sidebar overlay could be added here */}
       </div>
     </div>
   );
