@@ -18,7 +18,7 @@ export interface Conversation {
 }
 
 const Index = () => {
-  const [isLoggedIn] = useState(false); // 模拟登录状态，可以后续连接到真实的认证系统
+  const [isLoggedIn] = useState(true); // 模拟登录状态，可以后续连接到真实的认证系统
   const [activeTitle, setActiveTitle] = useState("我是你的A教师助理TeacherA");
   const [viewMode, setViewMode] = useState<ViewMode>('welcome');
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
@@ -89,6 +89,20 @@ const Index = () => {
   ]);
 
   const handleNewChat = () => {
+    if(conversations && conversations.length>0 && conversations[0].title==='新对话'){
+      var conversation = conversations[0]
+      setConversations(prev => 
+        prev.map(conv => ({ 
+          ...conv, 
+          active: !(conv.id != conversation.id)
+        }))
+      );
+      // conversation.active = true;
+      setActiveTitle(conversation.title);
+      setViewMode(conversation.title==='新对话'?'welcome':'conversation');
+      setSelectedConversationId(conversation.id);
+      return;
+    }
     const newConversation: Conversation = {
       id: Date.now(),
       title: "新对话",
@@ -104,7 +118,7 @@ const Index = () => {
       ...prev.map(conv => ({ ...conv, active: false }))
     ]);
     setActiveTitle("新对话");
-    setViewMode('conversation');
+    setViewMode('welcome');
     setSelectedConversationId(newConversation.id);
   };
 
@@ -116,7 +130,7 @@ const Index = () => {
       }))
     );
     setActiveTitle(conversation.title);
-    setViewMode('conversation');
+    setViewMode(conversation.title==='新对话'?'welcome':'conversation');
     setSelectedConversationId(conversation.id);
   };
 
@@ -143,7 +157,7 @@ const Index = () => {
     <div className="min-h-screen flex flex-col font-roboto">
       <Header />
       
-      <div className={`flex flex-1 max-w-7xl mx-auto w-full p-5 gap-6 h-[calc(100vh-80px)] ${!isLoggedIn ? 'justify-center' : ''}`}>
+      <div className={`flex flex-1  mx-auto w-full p-5 gap-6 h-[calc(100vh-80px)] ${!isLoggedIn ? 'justify-center' : ''}`}>
         {isLoggedIn && (
           <div className="hidden lg:block">
             <Sidebar 
@@ -156,7 +170,7 @@ const Index = () => {
           </div>
         )}
         
-        <div className={`${isLoggedIn ? 'flex-1' : 'w-full max-w-4xl'}`}>
+        <div className={`${isLoggedIn ? 'flex-1' : 'w-full'}`}>
           {viewMode === 'welcome' ? (
             <MainContent activeTitle={activeTitle} />
           ) : (

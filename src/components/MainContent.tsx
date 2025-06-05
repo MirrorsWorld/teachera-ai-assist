@@ -31,8 +31,8 @@ const MainContent = ({ activeTitle = "我是你的A教师助理TeacherA" }: Main
   };
 
   return (
-    <main className="flex-1 flex flex-col bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-10 h-full justify-center">
-      <WelcomeSection title={activeTitle} />
+    <main className="flex-1 flex flex-col bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-5 h-full justify-center">
+      <WelcomeSection title={activeTitle === '新对话'? '我是你的A教师助理TeacherA':activeTitle} />
       
       <MessageInput 
         message={message}
