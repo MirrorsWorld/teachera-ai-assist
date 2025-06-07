@@ -2,18 +2,63 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(isLogin ? "登录" : "注册", { email, password });
-    // 这里可以添加实际的登录/注册逻辑
-    navigate("/");
+    
+    try {
+      const endpoint = isLogin ? '/api/login' : '/api/register';
+      const formData = isLogin 
+        ? { username, password }
+        : { username, password, email, invite_code: inviteCode };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          "accept": "application/json"
+        },
+        body: Object.entries(formData)
+          .map(([key, value]) => `${key}=${encodeURIComponent(value || '')}`)
+          .join('&')
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        if (isLogin) {
+          localStorage.setItem('token', data.access_token);
+          toast({
+            title: "登录成功",
+            description: "欢迎回来！"
+          });
+          navigate("/");
+        } else {
+          toast({
+            title: "注册成功",
+            description: "请使用新账号登录"
+          });
+          setIsLogin(true);
+        }
+      } else {
+        throw new Error(data.error || '操作失败');
+      }
+    } catch (error) {
+      toast({
+        title: "错误",
+        description: error instanceof Error ? error.message : '网络错误，请重试',
+        variant: "destructive"
+      });
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -68,17 +113,32 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                邮箱地址
+                用户名
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors"
-                placeholder="请输入邮箱地址"
+                placeholder="请输入用户名"
                 required
               />
             </div>
+
+            {!isLogin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  邮箱地址
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors"
+                  placeholder="请输入邮箱地址（可选）"
+                />
+              </div>
+            )}
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -93,6 +153,22 @@ const Login = () => {
                 required
               />
             </div>
+
+            {!isLogin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  邀请码
+                </label>
+                <input
+                  type="text"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors"
+                  placeholder="请输入邀请码"
+                  required
+                />
+              </div>
+            )}
 
             {isLogin && (
               <div className="flex items-center justify-between text-sm">

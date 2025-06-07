@@ -18,7 +18,7 @@ export interface Conversation {
 }
 
 const Index = () => {
-  const [isLoggedIn] = useState(true); // 模拟登录状态，可以后续连接到真实的认证系统
+  const [isLoggedIn] = useState(localStorage.getItem("token")?true:false); // 模拟登录状态，可以后续连接到真实的认证系统
   const [activeTitle, setActiveTitle] = useState("我是你的A教师助理TeacherA");
   const [viewMode, setViewMode] = useState<ViewMode>('welcome');
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
