@@ -24,12 +24,10 @@ const Login = () => {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          "accept": "application/json"
+          'Content-Type': 'application/json',
+          'accept': 'application/json'
         },
-        body: Object.entries(formData)
-          .map(([key, value]) => `${key}=${encodeURIComponent(value || '')}`)
-          .join('&')
+        body: JSON.stringify(formData)
       });
       
       const data = await response.json();
@@ -37,6 +35,7 @@ const Login = () => {
       if (response.ok) {
         if (isLogin) {
           localStorage.setItem('token', data.access_token);
+          // localStorage.setItem('refresh_token', data.refresh_token);
           toast({
             title: "登录成功",
             description: "欢迎回来！"
@@ -50,7 +49,7 @@ const Login = () => {
           setIsLogin(true);
         }
       } else {
-        throw new Error(data.error || '操作失败');
+        throw new Error(data.detail || '操作失败');
       }
     } catch (error) {
       toast({

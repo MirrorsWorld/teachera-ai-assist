@@ -1,4 +1,5 @@
 
+import { Send } from "lucide-react";
 import { useState } from "react";
 
 interface MessageInputProps {
@@ -29,7 +30,7 @@ const MessageInput = ({ message, setMessage, onSendMessage }: MessageInputProps)
           onClick={onSendMessage}
           className="absolute right-4 bottom-4 bg-gradient-to-r from-primary to-accent text-white border-none w-12 h-12 rounded-full cursor-pointer transition-all duration-300 flex items-center justify-center text-xl shadow-[0_4px_10px_rgba(67,97,238,0.3)] hover:scale-105"
         >
-          ✈
+          <Send className=""/>
         </button>
       </div>
       <p className="text-center mt-3 text-sm text-gray-500">

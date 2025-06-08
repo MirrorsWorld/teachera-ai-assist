@@ -3,17 +3,26 @@ import { useState } from "react";
 import WelcomeSection from "./WelcomeSection";
 import MessageInput from "./MessageInput";
 import ActionButtons from "./ActionButtons";
+import { ConversationData, createConversation } from "@/api/conversation";
 
 interface MainContentProps {
   activeTitle?: string;
+  onNewConversation:(newConv) => void;
 }
 
-const MainContent = ({ activeTitle = "我是你的A教师助理TeacherA" }: MainContentProps) => {
+const MainContent = ({ 
+  activeTitle = "我是你的A教师助理TeacherA",
+  onNewConversation
+}: MainContentProps) => {
   const [message, setMessage] = useState("");
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (message.trim() !== '') {
       console.log(`发送消息: ${message}`);
+      const newConv = await createConversation({
+        title: '新对话',
+      });
+      onNewConversation(newConv);
       setMessage('');
     }
   };
