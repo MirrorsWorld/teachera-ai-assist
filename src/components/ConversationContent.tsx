@@ -4,6 +4,10 @@ import { getMessageList, chat, ConversationContentProps, MessageData } from '../
 import { ConversationData, getConversationList } from "@/api/conversation";
 import { ScrollArea } from "./ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
+import ReactMarkdown from "react-markdown"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
+import remarkGfm from "remark-gfm"
 
 const test_data = [
   {
@@ -374,7 +378,7 @@ const ConversationContent = ({
                     </div>
                   )}
                   
-                  <div className="whitespace-pre-wrap relative group">
+                  {/* <div className="whitespace-pre-wrap relative group">
                     {message.content}
                     {message.isStreaming && (
                       <span className="inline-block ml-1 w-2 h-4 bg-gray-300 animate-pulse"></span>
@@ -391,6 +395,33 @@ const ConversationContent = ({
                         <Upload className="w-4 h-4" />
                       </button>
                     )}
+                  </div> */}
+                  <div className="markdown-content whitespace-pre-wrap break-words">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath, remarkGfm]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        a: ({ node, ...props }) => (
+                          <a
+                            {...props}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                          />
+                        ),
+                        code: ({ node, className, children, ...props }) => {
+                          return (
+                            <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
+                              <code className="block p-2 text-sm text-blue-50" {...props}>
+                                {children}
+                              </code>
+                            </div>
+                          )
+                        },
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
                   </div>
                 </div>
                 <div className={`text-xs text-gray-500 mt-1 ${
