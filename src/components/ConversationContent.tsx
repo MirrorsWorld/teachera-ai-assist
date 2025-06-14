@@ -412,7 +412,7 @@ const ConversationContent = ({
                         code: ({ node, className, children, ...props }) => {
                           return (
                             <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
-                              <code className="block p-2 text-sm text-blue-50" {...props}>
+                              <code className="block p-2 text-sm text-black-100" {...props}>
                                 {children}
                               </code>
                             </div>
