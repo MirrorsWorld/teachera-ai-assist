@@ -13,13 +13,14 @@ export interface Message {
 
 export interface MessageData {
   id: number;
-  type: 'user' | 'assistant' | 'thinking';
+  type: 'user' | 'assistant';
+  thinking?: string;
   content: string;
   htmlContent?: string;
-  image?: string;
-  timestamp: string;
-  chunks?: string[];
   isStreaming?: boolean;
+  timestamp: string;
+  image?: string;
+  // chunks?: string[];
 }
 export interface ConversationContentProps {
   conversationId: number;
