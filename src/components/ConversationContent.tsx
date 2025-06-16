@@ -9,7 +9,7 @@ import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import remarkGfm from "remark-gfm"
 
-const test_data = [
+const test_data: MessageData[] = [
   {
     id: 1,
     type: 'user',
@@ -22,18 +22,300 @@ const test_data = [
     content: '好的，我们来复习一下二次函数的基本性质。二次函数的一般形式是 f(x) = ax² + bx + c (a ≠ 0)。\n\n主要性质包括：\n1. 开口方向：当a > 0时开口向上，当a < 0时开口向下\n2. 对称轴：x = -b/(2a)\n3. 顶点坐标：(-b/(2a), (4ac-b²)/(4a))\n4. 最值：当a > 0时有最小值，当a < 0时有最大值',
     timestamp: '14:31',
     htmlContent: `
-      <div style="background: linear-gradient(135deg, #f5f7ff 0%, #eef0f9 100%); padding: 20px; border-radius: 12px; margin: 10px 0;">
-        <h3 style="color: #4361ee; margin-bottom: 15px;">二次函数的基本性质</h3>
-        <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <p style="margin-bottom: 10px;"><strong>一般形式：</strong> f(x) = ax² + bx + c (a ≠ 0)</p>
-          <ul style="margin-left: 20px; line-height: 1.6;">
-            <li><strong>开口方向：</strong>当a > 0时开口向上，当a < 0时开口向下</li>
-            <li><strong>对称轴：</strong>x = -b/(2a)</li>
-            <li><strong>顶点坐标：</strong>(-b/(2a), (4ac-b²)/(4a))</li>
-            <li><strong>最值：</strong>当a > 0时有最小值，当a < 0时有最大值</li>
-          </ul>
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>函数图像分析工具</title>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+            body {
+                font-family: 'Roboto', sans-serif;
+                margin: 0;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                background-color: #f5f5f5;
+            }
+            
+            .container {
+                display: flex;
+                gap: 20px;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            
+            .ggb-container {
+                width: 800px;
+                height: 600px;
+                background-color: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            
+            .control-panel {
+                flex: 1;
+                background-color: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+    
+            h1 {
+                color: #333;
+                margin-bottom: 20px;
+            }
+    
+            .control-group {
+                margin-bottom: 20px;
+            }
+    
+            .control-group h3 {
+                margin-top: 0;
+                color: #444;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 8px;
+            }
+    
+            button {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                margin: 5px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background-color 0.3s;
+            }
+    
+            button:hover {
+                background-color: #45a049;
+            }
+    
+            button.toggle {
+                background-color: #2196F3;
+            }
+    
+            button.toggle:hover {
+                background-color: #0b7dda;
+            }
+    
+            button.reset {
+                background-color: #f44336;
+            }
+    
+            button.reset:hover {
+                background-color: #d32f2f;
+            }
+    
+            .slider-container {
+                margin: 15px 0;
+            }
+    
+            .slider-container label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 500;
+            }
+    
+            input[type="range"] {
+                width: 100%;
+            }
+    
+            .value-display {
+                font-size: 14px;
+                color: #666;
+                margin-top: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>函数图像分析工具</h1>
+        <div class="container">
+            <div class="ggb-container" id="ggb-element"></div>
+            <div class="control-panel">
+                <div class="control-group">
+                    <h3>主函数控制</h3>
+                    <button id="toggleMainFunction">显示/隐藏主函数</button>
+                    <button id="toggleDerivative">显示/隐藏导数函数</button>
+                    <button class="reset" id="resetAll">重置所有</button>
+                </div>
+    
+                <div class="control-group">
+                    <h3>参数控制</h3>
+                    <div class="slider-container">
+                        <label for="kSlider">k 值 (0 < k < 1/3)</label>
+                        <input type="range" id="kSlider" min="0.01" max="0.33" step="0.01" value="0.1">
+                        <div class="value-display">当前值: <span id="kValue">0.1</span></div>
+                    </div>
+                </div>
+    
+                <div class="control-group">
+                    <h3>点控制</h3>
+                    <button id="toggleP1">显示/隐藏极值点 P1</button>
+                    <button id="toggleP2">显示/隐藏零点 P2</button>
+                </div>
+    
+                <div class="control-group">
+                    <h3>辅助函数控制</h3>
+                    <button id="toggleGfunc">显示/隐藏 g_func(x)</button>
+                    <button id="toggleGt">显示/隐藏 g_t(t)</button>
+                </div>
+            </div>
         </div>
-      </div>
+    
+        <script src="https://cdn.geogebra.org/apps/deployggb.js"></script>
+        <script>
+            // GeoGebra parameters
+            const parameters = {
+                "id": "ggbApplet",
+                "appName": "classic",
+                "width": 800,
+                "height": 600,
+                "showMenuBar": true,
+                "showAlgebraInput": true,
+                "showToolBar": true,
+                "showToolBarHelp": true,
+                "showResetIcon": true,
+                "enableLabelDrags": true,
+                "enableShiftDragZoom": true,
+                "enableRightClick": true,
+                "errorDialogsActive": false,
+                "useBrowserForJS": false,
+                "allowStyleBar": false,
+                "preventFocus": false,
+                "showZoomButtons": true,
+                "capturingThreshold": 3,
+                "showFullscreenButton": true,
+                "scale": 1,
+                "disableAutoScale": false,
+                "allowUpscale": false,
+                "clickToLoad": false,
+                "buttonRounding": 0.7,
+                "buttonShadows": false,
+                "language": "zh-CN",
+                "appletOnLoad": function(api) {
+                    window.ggbApp = api;
+                    initializeGeoGebra();
+                }
+            };
+    
+            // Initialize GeoGebra
+            window.addEventListener('load', function() {
+                var applet = new GGBApplet(parameters, true);
+                applet.inject('ggb-element');
+            });
+    
+            // Initialize GeoGebra objects
+            function initializeGeoGebra() {
+                // Create slider for k
+                ggbApp.evalCommand('k=Slider(0.01,0.33,0.01,1,140,false,true,false,false)');
+                ggbApp.evalCommand('SetValue(k,0.1)');
+    
+                // Main function
+                ggbApp.evalCommand('f(x)=ln(1+x)-x+0.5x^2-kx^3');
+    
+                // Derivative function (hidden by default)
+                ggbApp.evalCommand('f_prime(x)=x^2(1/(1+x)-3k)');
+                ggbApp.evalCommand('SetVisibleInView(f_prime,1,false)');
+                ggbApp.evalCommand('SetLabel(f_prime,"derivative")');
+    
+                // Helper function g_func (hidden)
+                ggbApp.evalCommand('g_func(x)=1/(1+x)-3k');
+                ggbApp.evalCommand('SetVisibleInView(g_func,1,false)');
+                ggbApp.evalCommand('SetLabel(g_func,"g_function")');
+    
+                // x1 value (hidden)
+                ggbApp.evalCommand('x1_val=1/(3k)-1');
+                ggbApp.evalCommand('SetVisibleInView(x1_val,1,false)');
+                ggbApp.evalCommand('SetLabel(x1_val,"x1_value")');
+    
+                // Point P1 (visible)
+                ggbApp.evalCommand('P1=(x1_val,f(x1_val))');
+                ggbApp.evalCommand('SetLabel(P1,"P1_extreme_point")');
+    
+                // x2 value (hidden)
+                ggbApp.evalCommand('x2_val=NSolve(f(x)=0,x,x1_val+0.1,100)');
+                ggbApp.evalCommand('SetVisibleInView(x2_val,1,false)');
+                ggbApp.evalCommand('SetLabel(x2_val,"x2_root")');
+    
+                // Point P2 (visible)
+                ggbApp.evalCommand('P2=(x2_val,0)');
+                ggbApp.evalCommand('SetLabel(P2,"P2_zero_point")');
+    
+                // Helper function g_t (hidden)
+                ggbApp.evalCommand('g_t(t)=f(x1_val+t)-f(x1_val-t)');
+                ggbApp.evalCommand('SetVisibleInView(g_t,1,false)');
+                ggbApp.evalCommand('SetLabel(g_t,"g_t_function")');
+    
+                // Update k value display
+                updateKValue();
+            }
+    
+            // UI Controls
+            document.getElementById('toggleMainFunction').addEventListener('click', function() {
+                const visible = ggbApp.getVisible('f', 1);
+                ggbApp.setVisible('f', 1, !visible);
+            });
+    
+            document.getElementById('toggleDerivative').addEventListener('click', function() {
+                const visible = ggbApp.getVisible('f_prime', 1);
+                ggbApp.setVisible('f_prime', 1, !visible);
+            });
+    
+            document.getElementById('toggleP1').addEventListener('click', function() {
+                const visible = ggbApp.getVisible('P1', 1);
+                ggbApp.setVisible('P1', 1, !visible);
+            });
+    
+            document.getElementById('toggleP2').addEventListener('click', function() {
+                const visible = ggbApp.getVisible('P2', 1);
+                ggbApp.setVisible('P2', 1, !visible);
+            });
+    
+            document.getElementById('toggleGfunc').addEventListener('click', function() {
+                const visible = ggbApp.getVisible('g_func', 1);
+                ggbApp.setVisible('g_func', 1, !visible);
+            });
+    
+            document.getElementById('toggleGt').addEventListener('click', function() {
+                const visible = ggbApp.getVisible('g_t', 1);
+                ggbApp.setVisible('g_t', 1, !visible);
+            });
+    
+            document.getElementById('resetAll').addEventListener('click', function() {
+                ggbApp.reset();
+                initializeGeoGebra();
+            });
+    
+            // Slider control for k
+            const kSlider = document.getElementById('kSlider');
+            kSlider.addEventListener('input', function() {
+                const value = parseFloat(this.value).toFixed(2);
+                ggbApp.evalCommand('SetValue(k,' + value + ')');
+                updateKValue();
+    
+                // Update dependent objects
+                ggbApp.evalCommand('UpdateConstruction()');
+            });
+    
+            function updateKValue() {
+                const kValue = ggbApp.getValue('k');
+                document.getElementById('kValue').textContent = kValue.toFixed(2);
+            }
+    
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (typeof ggbApp !== 'undefined' && typeof ggbApp.recalculateEnvironments === 'function') {
+                    ggbApp.setSize(800, 600);
+                }
+            });
+        </script>
+    </body>
+    </html>
     `
   },
   {
@@ -44,39 +326,17 @@ const test_data = [
   },
   {
     id: 4,
-    type: 'assistant',
+    type: 'thinking',
     content: '当然可以！让我们看一个具体例子：f(x) = 2x² - 4x + 1',
     timestamp: '14:33',
-    htmlContent: `
-      <div style="background: linear-gradient(135deg, #f5f7ff 0%, #eef0f9 100%); padding: 20px; border-radius: 12px; margin: 10px 0;">
-        <h3 style="color: #4361ee; margin-bottom: 15px;">具体例子：f(x) = 2x² - 4x + 1</h3>
-        <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-              <h4 style="color: #3f37c9; margin-bottom: 10px;">分析过程：</h4>
-              <ul style="line-height: 1.8;">
-                <li>a = 2 > 0，开口向上</li>
-                <li>对称轴：x = -(-4)/(2×2) = 1</li>
-                <li>顶点：(1, -1)</li>
-                <li>最小值：-1</li>
-              </ul>
-            </div>
-            <div style="background: #f8f9ff; padding: 10px; border-radius: 6px;">
-              <h4 style="color: #3f37c9; margin-bottom: 10px;">图像特征：</h4>
-              <p style="margin: 0; line-height: 1.6;">开口向上的抛物线<br/>顶点在(1, -1)处<br/>在x=1处取得最小值</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    `
   }
 ]
-const ConversationContent = ({ 
-  conversationId, 
-  title, 
-  onDelete, 
+const ConversationContent = ({
+  conversationId,
+  title,
+  onDelete,
   onFavorite,
-  isFavorited 
+  isFavorited
 }: ConversationContentProps) => {
   const [showActions, setShowActions] = useState(false);
   const [newMessage, setNewMessage] = useState("");
@@ -86,7 +346,7 @@ const ConversationContent = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 模拟对话消息数据
-  const [messages, setMessages] = useState<MessageData[]>([]);
+  const [messages, setMessages] = useState<MessageData[]>(test_data);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -104,23 +364,23 @@ const ConversationContent = ({
   }, [messages]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!conversationId) return;
-      setMessages([])
-      try {
-        var data = await getMessageList(conversationId)
-        console.info('获取会话消息列表:', data)
-        if(!data) {
-          data = []
-        }
-        setMessages(data)
-      } catch (error) {
-        console.error('获取会话消息列表失败:', error)
-      } finally {
-        // setLoading(false)
-      }
-    }
-    fetchData()
+    // const fetchData = async () => {
+    //   if (!conversationId) return;
+    //   setMessages([])
+    //   try {
+    //     var data = await getMessageList(conversationId)
+    //     console.info('获取会话消息列表:', data)
+    //     if (!data) {
+    //       data = []
+    //     }
+    //     setMessages(data)
+    //   } catch (error) {
+    //     console.error('获取会话消息列表失败:', error)
+    //   } finally {
+    //     // setLoading(false)
+    //   }
+    // }
+    // fetchData()
   }, [conversationId])
 
   const handleDelete = async () => {
@@ -159,25 +419,26 @@ const ConversationContent = ({
     //   content: '',
     //   timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     // }]);
-  
+
     try {
       const controller = new AbortController();
       setAbortController(controller);
-  
+
       // 流式请求
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/chat/stream', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
           conversation_id: conversationId,
-          content: newMessage
+          prompt: newMessage,
+          deep_thinking: true
         }),
         signal: controller.signal
       });
-  
+
       // 创建assistant消息
       const assistantId = Date.now();
       setMessages(prev => [...prev, {
@@ -194,25 +455,41 @@ const ConversationContent = ({
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         const chunk = decoder.decode(value);
-        content+=chunk;
-        setMessages(prev => 
-          prev
-          // .filter((msg, index) => index !== prev.length - 2) // 删除倒数第二条记录
-          .map(msg => 
-            msg.id === assistantId 
-              ? { ...msg, content: msg.content + chunk }
-              : msg
-          )
-        );
+
+        // 处理可能包含多个 JSON 对象的情况（以 "data: " 分隔）
+        const dataLines = chunk.split('\n').filter(line => line.trim() !== '');
+
+        for (const line of dataLines) {
+          try {
+            // 确保是以 "data: " 开头的有效行
+            if (!line.startsWith('data: ')) continue;
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr) continue;
+            const data = JSON.parse(jsonStr);
+            // 只处理 type 为 text 的消息
+            if (data.type === 'text') {
+              content += data.content;  // 累积完整内容
+              setMessages(prev =>
+                prev.map(msg =>
+                  msg.id === assistantId
+                    ? { ...msg, content: content } // 直接使用累积的完整内容
+                    : msg
+                )
+              );
+            }
+          } catch (error) {
+            console.error('Error parsing line:', error, line);
+          }
+        }
       }
 
       // 更新完成状态
       setMessages(prev =>
         prev
-        // .filter((msg, index) => index !== prev.length - 2)
-        .map(msg =>
+          // .filter((msg, index) => index !== prev.length - 2)
+          .map(msg =>
             msg.id === assistantId
               ? { ...msg, isStreaming: false }
               : msg
@@ -278,14 +555,13 @@ const ConversationContent = ({
           >
             <MoreVertical className="w-5 h-5" />
           </button>
-          
+
           {showActions && (
             <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-10 min-w-[120px]">
               <button
                 onClick={handleFavorite}
-                className={`w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-gray-50 rounded-t-lg ${
-                  isFavorited ? 'text-red-500' : 'text-gray-700'
-                }`}
+                className={`w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-gray-50 rounded-t-lg ${isFavorited ? 'text-red-500' : 'text-gray-700'
+                  }`}
               >
                 <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
                 {isFavorited ? '取消收藏' : '收藏'}
@@ -303,44 +579,44 @@ const ConversationContent = ({
       </div>
 
       {/* 对话内容 */}
-      
+
       <div className="p-6 space-y-4 bg-gray-50 h-[calc(100vh-350px)] overflow-y-auto">
         <ScrollArea ref={scrollRef} className="flex-1 p-4">
           {messages && messages.map((message) => (
-          message &&
-          <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {message.type === 'thinking' ? (
-              <div className="max-w-[80%] w-full">
-                <div className="p-3 bg-blue-50 rounded-lg animate-pulse">
-                  <div className="flex items-center space-x-2 text-blue-600">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">深度思考中...</span>
-                  </div>
-                  <div className="mt-2 text-xs text-blue-500">{message.content}</div>
-                </div>
-              </div>
-            ) : (
-              <div className={`max-w-[80%] ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
-                <div className={`p-4 rounded-lg relative ${
-                  message.type === 'user' 
-                    ? 'bg-primary text-white ml-auto' 
-                    : 'bg-white text-gray-900 shadow-sm'
-                }`}>
-                  {message.isStreaming && (
-                    <div className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
-                      <Loader2 className="w-3 h-3 animate-spin" />
+            message &&
+            <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {message.type === 'thinking' ? (
+                <div className="max-w-[80%] w-full">
+                  <div className="p-3 bg-blue-50 rounded-lg animate-pulse">
+                    <div className="flex items-center space-x-2 text-blue-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm">深度思考中...</span>
                     </div>
-                  )}
-                  {message.image && (
-                    <img 
-                      src={message.image} 
-                      alt="上传的图片" 
-                      className="max-w-full h-auto rounded-lg mb-2"
-                    />
-                  )}
-                  
-                  {/* HTML内容渲染或源码显示 */}
-                  {message.htmlContent && message.type === 'assistant' && (
+                    <div className="mt-2 text-xs text-blue-500">{message.content}</div>
+                  </div>
+                </div>
+                ) : ''}
+                {message.type === 'assistant' ? (
+                <div className={`max-w-[95%] ${message.type === 'user' ? 'order-2' : 'order-1'} ${message.type === 'assistant' ? 'flex-1' : ''}`}>
+                  <div className={`p-4 rounded-lg relative ${message.type === 'user'
+                      ? 'bg-primary text-white ml-auto'
+                      : 'bg-white text-gray-900 shadow-sm'
+                    }`}>
+                    {message.isStreaming && (
+                      <div className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      </div>
+                    )}
+                    {message.image && (
+                      <img
+                        src={message.image}
+                        alt="上传的图片"
+                        className="max-w-full h-auto rounded-lg mb-2"
+                      />
+                    )}
+
+                    {/* HTML内容渲染或源码显示 */}
+                    {message.htmlContent && message.type === 'assistant' && (
                     <div className="mb-3">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-gray-600">生成内容:</span>
@@ -364,21 +640,23 @@ const ConversationContent = ({
                           </button>
                         </div>
                       </div>
-                      
+
                       {showHtmlSource[message.id] ? (
                         <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto w-[600px]">
                           <code>{message.htmlContent}</code>
                         </pre>
                       ) : (
-                        <div 
-                          className="border rounded-lg overflow-hidden w-[600px]"
-                          dangerouslySetInnerHTML={{ __html: message.htmlContent }}
+                        <iframe
+                          srcDoc={message.htmlContent}
+                          height="800"
+                          className="border rounded-lg w-full"
+                          sandbox="allow-scripts allow-same-origin"
                         />
                       )}
                     </div>
                   )}
-                  
-                  {/* <div className="whitespace-pre-wrap relative group">
+
+                    {/* <div className="whitespace-pre-wrap relative group">
                     {message.content}
                     {message.isStreaming && (
                       <span className="inline-block ml-1 w-2 h-4 bg-gray-300 animate-pulse"></span>
@@ -396,55 +674,54 @@ const ConversationContent = ({
                       </button>
                     )}
                   </div> */}
-                  <div className="markdown-content whitespace-pre-wrap break-words">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkMath, remarkGfm]}
-                      rehypePlugins={[rehypeKatex]}
-                      components={{
-                        a: ({ node, ...props }) => (
-                          <a
-                            {...props}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline"
-                          />
-                        ),
-                        code: ({ node, className, children, ...props }) => {
-                          return (
-                            <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
-                              <code className="block p-2 text-sm text-black-100" {...props}>
-                                {children}
-                              </code>
-                            </div>
-                          )
-                        },
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
+                    <div className="markdown-content whitespace-pre-wrap break-words">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkMath, remarkGfm]}
+                        rehypePlugins={[rehypeKatex]}
+                        components={{
+                          a: ({ node, ...props }) => (
+                            <a
+                              {...props}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:underline"
+                            />
+                          ),
+                          code: ({ node, className, children, ...props }) => {
+                            return (
+                              <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
+                                <code className="block p-2 text-sm text-black-100" {...props}>
+                                  {children}
+                                </code>
+                              </div>
+                            )
+                          },
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                  <div className={`text-xs text-gray-500 mt-1 ${message.type === 'user' ? 'text-right' : 'text-left'
+                    }`}>
+                    {message.timestamp}
                   </div>
                 </div>
-                <div className={`text-xs text-gray-500 mt-1 ${
-                  message.type === 'user' ? 'text-right' : 'text-left'
-                }`}>
-                  {message.timestamp}
-                </div>
-              </div>
-            )}
-          </div>
+              ) : ''}
+            </div>
           ))}
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
         </ScrollArea>
       </div>
-      
+
 
       {/* 输入区域 */}
       <div className="p-6 border-t border-gray-200 bg-white rounded-b-xl">
         {selectedImage && (
           <div className="mb-4 relative inline-block">
-            <img 
-              src={selectedImage} 
-              alt="准备发送的图片" 
+            <img
+              src={selectedImage}
+              alt="准备发送的图片"
               className="max-h-20 rounded-lg"
             />
             <button
@@ -455,7 +732,7 @@ const ConversationContent = ({
             </button>
           </div>
         )}
-        
+
         <div className="flex gap-3 items-end">
           <div className="flex-1">
             <textarea
@@ -467,7 +744,7 @@ const ConversationContent = ({
               rows={1}
             />
           </div>
-          
+
           <input
             ref={fileInputRef}
             type="file"
@@ -475,7 +752,7 @@ const ConversationContent = ({
             onChange={handleImageUpload}
             className="hidden"
           />
-          
+
           <button
             onClick={() => fileInputRef.current?.click()}
             className="p-3 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors"
@@ -483,7 +760,7 @@ const ConversationContent = ({
           >
             <Image className="w-5 h-5" />
           </button>
-          
+
           {abortController ? (
             <button
               onClick={() => abortController.abort()}
@@ -491,18 +768,18 @@ const ConversationContent = ({
             >
               停止生成
             </button>
-          ) 
-          :
-          (<button 
-            onClick={handleSend}
-            disabled={!newMessage.trim() && !selectedImage}
-            className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            <Send className="w-4 h-4" />
-            发送
-          </button>)}
+          )
+            :
+            (<button
+              onClick={handleSend}
+              disabled={!newMessage.trim() && !selectedImage}
+              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Send className="w-4 h-4" />
+              发送
+            </button>)}
         </div>
-        
+
         <p className="text-xs text-gray-500 mt-2">
           支持上传图片，按 Enter 发送，Shift + Enter 换行
         </p>

@@ -55,6 +55,7 @@ export function createConversation(data: { title: string }) {
     active: res.data.active || true,
   }));
 }
+
 export function getConversation(id: number) {
   return get(`/api/conversations/${id}`).then(res => ({
     id: res.data.id,

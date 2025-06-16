@@ -9,8 +9,13 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       '/api': {
         target: 'https://www.gxxuetu.cn/',
+        // target: 'http://localhost:8000/',
         changeOrigin: true,
         // rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/chat/stream': {
+        target: 'http://127.0.0.1:8080',
+        changeOrigin: true,
       },
     },
     host: "::",
