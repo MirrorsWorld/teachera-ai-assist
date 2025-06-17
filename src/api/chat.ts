@@ -14,8 +14,8 @@ export interface Message {
 export interface MessageData {
   id: number;
   type: 'user' | 'assistant';
-  thinking?: string;
-  content: string;
+  reasoning?: string;
+  answer: string;
   htmlContent?: string;
   isStreaming?: boolean;
   timestamp: string;

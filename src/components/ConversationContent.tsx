@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Heart, Trash2, MoreVertical, Send, Upload, Image, Code, Eye, Loader2 } from "lucide-react";
+import { Heart, Trash2, MoreVertical, Send, Copy, Image, Code, Eye, Loader2 } from "lucide-react";
 import { getMessageList, chat, ConversationContentProps, MessageData } from '../api/chat'
 import { ConversationData, getConversationList } from "@/api/conversation";
 import { ScrollArea } from "./ui/scroll-area";
@@ -13,13 +13,14 @@ const test_data: MessageData[] = [
   {
     id: 1,
     type: 'user',
-    content: '请帮我讲解二次函数的基本性质',
+    answer: '请帮我讲解二次函数的基本性质',
     timestamp: '14:30'
   },
   {
     id: 2,
     type: 'assistant',
-    content: '好的，我们来复习一下二次函数的基本性质。二次函数的一般形式是 f(x) = ax² + bx + c (a ≠ 0)。\n\n主要性质包括：\n1. 开口方向：当a > 0时开口向上，当a < 0时开口向下\n2. 对称轴：x = -b/(2a)\n3. 顶点坐标：(-b/(2a), (4ac-b²)/(4a))\n4. 最值：当a > 0时有最小值，当a < 0时有最大值',
+    reasoning: '好的，我们来复习一下二次函数的基本性质。二次函数的一般形式是 f(x) = ax² + bx + c (a ≠ 0)。\n\n主要性质包括：\n1. 开口方向：当a > 0时开口向上，当a < 0时开口向下\n2. 对称轴：x = -b/(2a)\n3. 顶点坐标：(-b/(2a), (4ac-b²)/(4a))\n4. 最值：当a > 0时有最小值，当a < 0时有最大值',
+    answer: '以上数据均为前端mock数据，正式数据请从后端获取。',
     timestamp: '14:31',
     htmlContent: `
     <!DOCTYPE html>
@@ -321,14 +322,13 @@ const test_data: MessageData[] = [
   {
     id: 3,
     type: 'user',
-    content: '能给我一个具体的例子吗？',
+    answer: '能给我一个具体的例子吗？',
     timestamp: '14:32'
   },
   {
     id: 4,
     type: 'assistant',
-    thinking: '深度思考内容...深度思考内容...深度思考内容...深度思考内容...深度思考内容...深度思考内容...深度思考内容...深度思考内容...',
-    content: '当然可以！让我们看一个具体例子：f(x) = 2x² - 4x + 1',
+    answer: '当然可以！让我们看一个具体例子：f(x) = 2x² - 4x + 1',
     timestamp: '14:33',
   }
 ]
@@ -345,6 +345,7 @@ const ConversationContent = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showHtmlSource, setShowHtmlSource] = useState<{ [key: number]: boolean }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [enableDeepThinking, setEnableDeepThinking] = useState(true);
 
   // 模拟对话消息数据
   const [messages, setMessages] = useState<MessageData[]>(test_data);
@@ -410,21 +411,14 @@ const ConversationContent = ({
     setMessages(prev => [...prev, {
       id: tempId,
       type: 'user',
-      content: newMessage,
+      answer: newMessage,
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     }]);
-    // const tempId2 = Date.now();
-    // setMessages(prev => [...prev, {
-    //   id: tempId2,
-    //   type: 'assistant',
-    //   content: '',
-    //   timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    // }]);
 
     try {
       const controller = new AbortController();
       setAbortController(controller);
-
+  
       // 流式请求
       const response = await fetch('/chat/stream', {
         method: 'POST',
@@ -435,7 +429,7 @@ const ConversationContent = ({
         body: JSON.stringify({
           conversation_id: conversationId,
           prompt: newMessage,
-          deep_thinking: true
+          deep_thinking: enableDeepThinking  // 使用状态值控制是否开启深度思考
         }),
         signal: controller.signal
       });
@@ -445,14 +439,18 @@ const ConversationContent = ({
       setMessages(prev => [...prev, {
         id: assistantId,
         type: 'assistant',
-        content: '',
+        reasoning: '',
+        answer: '',
+        htmlContent: '',
         timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         isStreaming: true
       }]);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let content = '';
+      let answer = '';
+      let reasoning = '';
+      let htmlContent = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -469,13 +467,35 @@ const ConversationContent = ({
             const jsonStr = line.slice(6).trim();
             if (!jsonStr) continue;
             const data = JSON.parse(jsonStr);
-            // 只处理 type 为 text 的消息
-            if (data.type === 'text') {
-              content += data.content;  // 累积完整内容
+            // 处理 type 为 think 的消息
+            if (data.type === 'reasoning') {
+              reasoning += data.content;  // 累积完整内容
               setMessages(prev =>
                 prev.map(msg =>
                   msg.id === assistantId
-                    ? { ...msg, content: content } // 直接使用累积的完整内容
+                    ? { ...msg, reasoning: reasoning } // 直接使用累积的完整内容
+                    : msg
+                )
+              );
+            }
+            // 处理 type 为 text 的消息
+            if (data.type === 'html_code') {
+              htmlContent += data.content;  // 累积完整内容
+              setMessages(prev =>
+                prev.map(msg =>
+                  msg.id === assistantId
+                    ? { ...msg, htmlContent: htmlContent } // 直接使用累积的完整内容
+                    : msg
+                )
+              );
+            }
+            // 处理 type 为 text 的消息
+            if (data.type === 'answer') {
+              answer += data.content;  // 累积完整内容
+              setMessages(prev =>
+                prev.map(msg =>
+                  msg.id === assistantId
+                    ? { ...msg, answer: answer } // 直接使用累积的完整内容
                     : msg
                 )
               );
@@ -489,7 +509,6 @@ const ConversationContent = ({
       // 更新完成状态
       setMessages(prev =>
         prev
-          // .filter((msg, index) => index !== prev.length - 2)
           .map(msg =>
             msg.id === assistantId
               ? { ...msg, isStreaming: false }
@@ -597,28 +616,28 @@ const ConversationContent = ({
                       className="max-w-full h-auto rounded-lg mb-2"
                     />
                   )}
-                  <div className="p-4 rounded-lg relative bg-primary text-white shadow-sm">{message.content}</div>
+                  <div className="p-4 rounded-lg relative bg-primary text-white shadow-sm">{message.answer}</div>
                   <div className='text-xs text-gray-500 mt-1 text-right'>
                     {message.timestamp}
-                  </div>                  
+                  </div>
                 </div>
               ) : (
                 <div className="flex-1">
                   {/* 深度思考部分 */}
-                  {message.thinking && (
+                  {message.reasoning && (
                     <div className="max-w-[80%] w-full">
                       <div className="p-3 bg-blue-50 rounded-lg">
                         {message.isStreaming && (
                           <div className="flex items-center space-x-2 text-blue-600">
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span className="text-sm">深度思考中...</span>
+                            <span className="text-sm">思考中...</span>
                           </div>
                         )}
-                        <div className="mt-2 text-xs text-blue-500">{message.thinking}</div>
+                        <div className="text-sm text-blue-500">{message.reasoning}</div>
                       </div>
                     </div>
                   )}
-                  <div className='max-w-[95%] order-1'>
+                  <div className='max-w-[95%] order-1 mt-2'>
                     <div className='p-4 rounded-lg relative bg-white text-gray-900 shadow-sm'>
                       {message.isStreaming && (
                         <div className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
@@ -633,13 +652,13 @@ const ConversationContent = ({
                             <div className="flex gap-1">
                               <button
                                 onClick={() => {
-                                  navigator.clipboard.writeText(message.content);
+                                  navigator.clipboard.writeText(message.htmlContent);
                                   toast({ title: '已复制到剪贴板', description: '内容已复制' });
                                 }}
                                 className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
                                 title="复制内容"
                               >
-                                <Upload className="w-4 h-4" />
+                                <Copy className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => toggleHtmlSource(message.id)}
@@ -652,7 +671,7 @@ const ConversationContent = ({
                           </div>
 
                           {showHtmlSource[message.id] ? (
-                            <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto w-[600px]">
+                            <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto w-[100%]">
                               <code>{message.htmlContent}</code>
                             </pre>
                           ) : (
@@ -665,25 +684,6 @@ const ConversationContent = ({
                           )}
                         </div>
                       )}
-
-                      {/* <div className="whitespace-pre-wrap relative group">
-                    {message.content}
-                    {message.isStreaming && (
-                      <span className="inline-block ml-1 w-2 h-4 bg-gray-300 animate-pulse"></span>
-                    )}
-                    {!message.htmlContent && (
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(message.content);
-                          toast({ title: '已复制到剪贴板', description: '内容已复制' });
-                        }}
-                        className="absolute -top-6 -right-6 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-                        title="复制内容"
-                      >
-                        <Upload className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div> */}
                       <div className="markdown-content whitespace-pre-wrap break-words">
                         <ReactMarkdown
                           remarkPlugins={[remarkMath, remarkGfm]}
@@ -708,7 +708,7 @@ const ConversationContent = ({
                             },
                           }}
                         >
-                          {message.content}
+                          {message.answer}
                         </ReactMarkdown>
                       </div>
                     </div>
@@ -743,6 +743,21 @@ const ConversationContent = ({
           </div>
         )}
 
+        {/* 新增深度思考勾选框 */}
+        {/* <div className="flex items-center mb-3">
+          <input
+            type="checkbox"
+            id="deepThinkingCheckbox"
+            checked={enableDeepThinking}
+            onChange={(e) => setEnableDeepThinking(e.target.checked)}
+            className="w-4 h-4 text-primary rounded focus:ring-primary/20"
+          />
+          <label htmlFor="deepThinkingCheckbox" className="ml-2 text-sm text-gray-600 cursor-pointer">
+            开启GGB代码生成
+          </label>
+        </div> */}
+
+        {/* 输入框和发送按钮 */}
         <div className="flex gap-3 items-end">
           <div className="flex-1">
             <textarea
@@ -778,16 +793,16 @@ const ConversationContent = ({
             >
               停止生成
             </button>
-          )
-            :
-            (<button
+          ) : (
+            <button
               onClick={handleSend}
               disabled={!newMessage.trim() && !selectedImage}
               className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
               发送
-            </button>)}
+            </button>
+          )}
         </div>
 
         <p className="text-xs text-gray-500 mt-2">
