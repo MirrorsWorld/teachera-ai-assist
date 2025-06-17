@@ -326,7 +326,8 @@ const test_data: MessageData[] = [
   },
   {
     id: 4,
-    type: 'thinking',
+    type: 'assistant',
+    thinking: '深度思考内容...深度思考内容...深度思考内容...深度思考内容...深度思考内容...深度思考内容...深度思考内容...深度思考内容...',
     content: '当然可以！让我们看一个具体例子：f(x) = 2x² - 4x + 1',
     timestamp: '14:33',
   }
@@ -585,78 +586,87 @@ const ConversationContent = ({
           {messages && messages.map((message) => (
             message &&
             <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-              {message.type === 'thinking' ? (
-                <div className="max-w-[80%] w-full">
-                  <div className="p-3 bg-blue-50 rounded-lg animate-pulse">
-                    <div className="flex items-center space-x-2 text-blue-600">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm">深度思考中...</span>
-                    </div>
-                    <div className="mt-2 text-xs text-blue-500">{message.content}</div>
-                  </div>
+              {/* 用户消息 */}
+              {message.type === 'user' ? (
+                <div>
+                  {/* 用户上传的图片 */}
+                  {message.image && (
+                    <img
+                      src={message.image}
+                      alt="上传的图片"
+                      className="max-w-full h-auto rounded-lg mb-2"
+                    />
+                  )}
+                  <div className="p-4 rounded-lg relative bg-primary text-white shadow-sm">{message.content}</div>
+                  <div className='text-xs text-gray-500 mt-1 text-right'>
+                    {message.timestamp}
+                  </div>                  
                 </div>
-                ) : ''}
-                {message.type === 'assistant' ? (
-                <div className={`max-w-[95%] ${message.type === 'user' ? 'order-2' : 'order-1'} ${message.type === 'assistant' ? 'flex-1' : ''}`}>
-                  <div className={`p-4 rounded-lg relative ${message.type === 'user'
-                      ? 'bg-primary text-white ml-auto'
-                      : 'bg-white text-gray-900 shadow-sm'
-                    }`}>
-                    {message.isStreaming && (
-                      <div className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
-                        <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <div className="flex-1">
+                  {/* 深度思考部分 */}
+                  {message.thinking && (
+                    <div className="max-w-[80%] w-full">
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        {message.isStreaming && (
+                          <div className="flex items-center space-x-2 text-blue-600">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-sm">深度思考中...</span>
+                          </div>
+                        )}
+                        <div className="mt-2 text-xs text-blue-500">{message.thinking}</div>
                       </div>
-                    )}
-                    {message.image && (
-                      <img
-                        src={message.image}
-                        alt="上传的图片"
-                        className="max-w-full h-auto rounded-lg mb-2"
-                      />
-                    )}
-
-                    {/* HTML内容渲染或源码显示 */}
-                    {message.htmlContent && message.type === 'assistant' && (
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-600">生成内容:</span>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(message.content);
-                              toast({ title: '已复制到剪贴板', description: '内容已复制' });
-                            }}
-                            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-                            title="复制内容"
-                          >
-                            <Upload className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => toggleHtmlSource(message.id)}
-                            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-                            title={showHtmlSource[message.id] ? "查看渲染结果" : "查看HTML源码"}
-                          >
-                            {showHtmlSource[message.id] ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {showHtmlSource[message.id] ? (
-                        <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto w-[600px]">
-                          <code>{message.htmlContent}</code>
-                        </pre>
-                      ) : (
-                        <iframe
-                          srcDoc={message.htmlContent}
-                          height="800"
-                          className="border rounded-lg w-full"
-                          sandbox="allow-scripts allow-same-origin"
-                        />
-                      )}
                     </div>
                   )}
+                  <div className='max-w-[95%] order-1'>
+                    <div className='p-4 rounded-lg relative bg-white text-gray-900 shadow-sm'>
+                      {message.isStreaming && (
+                        <div className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        </div>
+                      )}
+                      {/* HTML内容渲染或源码显示 */}
+                      {message.htmlContent && message.type === 'assistant' && (
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-600">生成内容:</span>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(message.content);
+                                  toast({ title: '已复制到剪贴板', description: '内容已复制' });
+                                }}
+                                className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                                title="复制内容"
+                              >
+                                <Upload className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => toggleHtmlSource(message.id)}
+                                className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                                title={showHtmlSource[message.id] ? "查看渲染结果" : "查看HTML源码"}
+                              >
+                                {showHtmlSource[message.id] ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
 
-                    {/* <div className="whitespace-pre-wrap relative group">
+                          {showHtmlSource[message.id] ? (
+                            <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto w-[600px]">
+                              <code>{message.htmlContent}</code>
+                            </pre>
+                          ) : (
+                            <iframe
+                              srcDoc={message.htmlContent}
+                              height="800"
+                              className="border rounded-lg w-full"
+                              sandbox="allow-scripts allow-same-origin"
+                            />
+                          )}
+                        </div>
+                      )}
+
+                      {/* <div className="whitespace-pre-wrap relative group">
                     {message.content}
                     {message.isStreaming && (
                       <span className="inline-block ml-1 w-2 h-4 bg-gray-300 animate-pulse"></span>
@@ -674,40 +684,40 @@ const ConversationContent = ({
                       </button>
                     )}
                   </div> */}
-                    <div className="markdown-content whitespace-pre-wrap break-words">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkMath, remarkGfm]}
-                        rehypePlugins={[rehypeKatex]}
-                        components={{
-                          a: ({ node, ...props }) => (
-                            <a
-                              {...props}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-500 hover:underline"
-                            />
-                          ),
-                          code: ({ node, className, children, ...props }) => {
-                            return (
-                              <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
-                                <code className="block p-2 text-sm text-black-100" {...props}>
-                                  {children}
-                                </code>
-                              </div>
-                            )
-                          },
-                        }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
+                      <div className="markdown-content whitespace-pre-wrap break-words">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkMath, remarkGfm]}
+                          rehypePlugins={[rehypeKatex]}
+                          components={{
+                            a: ({ node, ...props }) => (
+                              <a
+                                {...props}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-500 hover:underline"
+                              />
+                            ),
+                            code: ({ node, className, children, ...props }) => {
+                              return (
+                                <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
+                                  <code className="block p-2 text-sm text-black-100" {...props}>
+                                    {children}
+                                  </code>
+                                </div>
+                              )
+                            },
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                    <div className='text-xs text-gray-500 mt-1 text-left'>
+                      {message.timestamp}
                     </div>
                   </div>
-                  <div className={`text-xs text-gray-500 mt-1 ${message.type === 'user' ? 'text-right' : 'text-left'
-                    }`}>
-                    {message.timestamp}
-                  </div>
                 </div>
-              ) : ''}
+              )}
             </div>
           ))}
           <div ref={messagesEndRef} />
