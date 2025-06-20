@@ -4,7 +4,7 @@ import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import MainContent from "../components/MainContent";
 import ConversationContent from "../components/ConversationContent";
-import HtmlContent from "../components/HtmlContent";
+// import HtmlContent from "../components/HtmlContent";
 import { ConversationData, createConversation, deleteConversation, getConversation, getConversationList } from "@/api/conversation";
 import { toast } from "@/hooks/use-toast";
 
@@ -100,13 +100,13 @@ const Index = () => {
           )}
         </div>
 
-        {isLoggedIn && (
+        {/* {isLoggedIn && (
           <div className="hidden lg:block flex flex-1">
             <HtmlContent
               htmlCode={htmlCode}
             />
           </div>
-        )}
+        )} */}
 
       </div>
     </div>

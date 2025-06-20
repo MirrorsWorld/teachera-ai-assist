@@ -8,6 +8,7 @@ import ReactMarkdown from "react-markdown"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import remarkGfm from "remark-gfm"
+import useHtmlStore from '@/store/store';
 
 const test_data: MessageData[] = [
   {
@@ -346,6 +347,14 @@ const ConversationContent = ({
   const [showHtmlSource, setShowHtmlSource] = useState<{ [key: number]: boolean }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [enableDeepThinking, setEnableDeepThinking] = useState(true);
+  // 从 store 获取状态和方法
+  const { htmlCode, reset } = useHtmlStore();
+  
+  // 示例重置函数
+  const handleReset = (val:string) => {
+    // 调用 reset 并传入新的 HTML 字符串
+    reset(val);
+  };
 
   // 模拟对话消息数据
   const [messages, setMessages] = useState<MessageData[]>(test_data);
@@ -478,7 +487,7 @@ const ConversationContent = ({
                 )
               );
             }
-            // 处理 type 为 text 的消息
+            // 处理 type 为 html_code 的消息
             if (data.type === 'html_code') {
               htmlContent += data.content;  // 累积完整内容
               setMessages(prev =>
@@ -508,13 +517,11 @@ const ConversationContent = ({
 
       // 更新完成状态
       setMessages(prev =>
-        prev
-          .map(msg =>
-            msg.id === assistantId
-              ? { ...msg, isStreaming: false }
-              : msg
-          )
+        prev.map(msg =>
+          msg.id === assistantId ? { ...msg, isStreaming: false } : msg
+        )
       );
+      handleReset(htmlContent)
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('流式请求异常:', error);
