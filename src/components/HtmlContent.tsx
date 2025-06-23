@@ -1,40 +1,56 @@
-// import { useState, useRef, useEffect } from "react";
-// import { Copy, Code, Eye } from "lucide-react";
-// import { toast } from "@/hooks/use-toast";
+import { useState, useRef, useEffect } from "react";
+import { Copy, Code, Eye } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import useHtmlStore from '@/store/store';
+const HtmlContent = () => {
+  // 从 store 获取状态和方法
+  const { htmlCode, reset } = useHtmlStore();
+  const [showHtmlSource, setShowHtmlSource] = useState(false);
 
-// const HtmlContent = ({htmlCode}) => {
+  const toggleHtmlSource = () => {
+    setShowHtmlSource(!showHtmlSource);
+  };
 
-//   const [showHtmlSource, setShowHtmlSource] = useState(false);
+  return (
+    <div className="mb-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-gray-600">生成内容:</span>
+        <div className="flex gap-1">
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(htmlCode);
+              toast({ title: '已复制到剪贴板', description: '内容已复制' });
+            }}
+            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+            title="复制内容"
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => toggleHtmlSource()}
+            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+            title={htmlCode ? "查看渲染结果" : "查看HTML源码"}
+          >
+            {htmlCode ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+      {showHtmlSource ? (
+        <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto w-[100%]">
+          <code>{htmlCode}</code>
+        </pre>
+      ) : (
+        <iframe
+          srcDoc={htmlCode}
+          height="800"
+          className="border rounded-lg w-full"
+          sandbox="allow-scripts allow-same-origin"
+        />
+      )}
+    </div>
+    
+  );
+};
 
-//   const toggleHtmlSource = () => {
-//     setShowHtmlSource(!showHtmlSource);
-//   };
-
-//   return (
-//     <div className="flex items-center justify-between mb-2">
-//       <span className="text-sm font-medium text-gray-600">生成内容:</span>
-//       <div className="flex gap-1">
-//         <button
-//           onClick={() => {
-//             navigator.clipboard.writeText(htmlCode);
-//             toast({ title: '已复制到剪贴板', description: '内容已复制' });
-//           }}
-//           className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-//           title="复制内容"
-//         >
-//           <Copy className="w-4 h-4" />
-//         </button>
-//         <button
-//           onClick={() => toggleHtmlSource(message.id)}
-//           className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-//           title={showHtmlSource[message.id] ? "查看渲染结果" : "查看HTML源码"}
-//         >
-//           {showHtmlSource[message.id] ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
-//         </button>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default HtmlContent;
+export default HtmlContent;
 

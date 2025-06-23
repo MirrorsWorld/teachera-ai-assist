@@ -4,14 +4,15 @@ import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import MainContent from "../components/MainContent";
 import ConversationContent from "../components/ConversationContent";
-// import HtmlContent from "../components/HtmlContent";
+import HtmlContent from "../components/HtmlContent";
 import { ConversationData, createConversation, deleteConversation, getConversation, getConversationList } from "@/api/conversation";
 import { toast } from "@/hooks/use-toast";
 
 export type ViewMode = 'welcome' | 'conversation';
 
 const Index = () => {
-  const [isLoggedIn] = useState(localStorage.getItem("token") ? true : false); // 模拟登录状态，可以后续连接到真实的认证系统
+  // const [isLoggedIn] = useState(localStorage.getItem("token") ? true : false); // 模拟登录状态，可以后续连接到真实的认证系统>
+  const [isLoggedIn] = useState(true); // 模拟登录状态，可以后续连接到真实的认证系统>
   const [activeTitle, setActiveTitle] = useState("我是你的A教师助理TeacherA");
   const [viewMode, setViewMode] = useState<ViewMode>('welcome');
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
@@ -100,13 +101,11 @@ const Index = () => {
           )}
         </div>
 
-        {/* {isLoggedIn && (
+        {isLoggedIn && (
           <div className="hidden lg:block flex flex-1">
-            <HtmlContent
-              htmlCode={htmlCode}
-            />
+            <HtmlContent />
           </div>
-        )} */}
+        )}
 
       </div>
     </div>

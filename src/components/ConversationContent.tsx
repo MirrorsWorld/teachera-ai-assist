@@ -429,7 +429,7 @@ const ConversationContent = ({
       setAbortController(controller);
   
       // 流式请求
-      const response = await fetch('/chat/stream', {
+      const response = await fetch('/api/v2/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -10,13 +10,14 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'https://www.gxxuetu.cn/',
         // target: 'http://localhost:8000/',
+        // target: 'http://106.52.162.78:8001/',
         changeOrigin: true,
         // rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      '/chat/stream': {
-        target: 'http://127.0.0.1:8080',
-        changeOrigin: true,
-      },
+      // '/chat/stream': {
+      //   target: 'http://127.0.0.1:8080',
+      //   changeOrigin: true,
+      // },
     },
     host: "::",
     port: 8000,
