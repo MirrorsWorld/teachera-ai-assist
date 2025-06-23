@@ -7,17 +7,16 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     proxy: {
-      '/api': {
-        target: 'https://www.gxxuetu.cn/',
-        // target: 'http://localhost:8000/',
-        // target: 'http://106.52.162.78:8001/',
+      '/api/v2':{
+        target: 'http://106.52.162.78:8001/',
         changeOrigin: true,
         // rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      // '/chat/stream': {
-      //   target: 'http://127.0.0.1:8080',
-      //   changeOrigin: true,
-      // },
+      '/api':{
+        target: 'https://www.gxxuetu.cn/',
+        changeOrigin: true,
+        // rewrite: (path) => path.replace(/^\/api/, ''),
+      },
     },
     host: "::",
     port: 8000,
