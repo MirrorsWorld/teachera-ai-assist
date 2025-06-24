@@ -12,7 +12,7 @@ const HtmlContent = () => {
   };
 
   return (
-    <div className="mb-3">
+    <div className="h-full">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium text-gray-600">生成内容:</span>
         <div className="flex gap-1">
@@ -36,14 +36,13 @@ const HtmlContent = () => {
         </div>
       </div>
       {showHtmlSource ? (
-        <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-x-auto w-[100%]">
-          <code>{htmlCode}</code>
+        <pre className="bg-gray-800 text-green-400 p-3 rounded text-sm h-[calc(100vh-150px)] overflow-x-auto overflow-y-auto">
+          <div className="w-[500px]">{htmlCode}</div>
         </pre>
       ) : (
         <iframe
           srcDoc={htmlCode}
-          height="800"
-          className="border rounded-lg w-full"
+          className="border rounded-lg w-full lg:h-[calc(100vh-150px)]"
           sandbox="allow-scripts allow-same-origin"
         />
       )}

@@ -45,7 +45,7 @@ const test_data: MessageData[] = [
             .container {
                 display: flex;
                 gap: 20px;
-                max-width: 1200px;
+                max-width: 700px;
                 margin: 0 auto;
             }
             
@@ -437,8 +437,11 @@ const ConversationContent = ({
         },
         body: JSON.stringify({
           conversation_id: conversationId,
-          prompt: newMessage,
-          deep_thinking: enableDeepThinking  // 使用状态值控制是否开启深度思考
+          message: newMessage,
+          message_order: 1,
+          user_id: 1,
+          title: "测试对话"
+          // deep_thinking: enableDeepThinking  // 使用状态值控制是否开启深度思考
         }),
         signal: controller.signal
       });
@@ -462,10 +465,11 @@ const ConversationContent = ({
       let htmlContent = '';
       while (true) {
         const { done, value } = await reader.read();
+        
         if (done) break;
 
         const chunk = decoder.decode(value);
-
+        
         // 处理可能包含多个 JSON 对象的情况（以 "data: " 分隔）
         const dataLines = chunk.split('\n').filter(line => line.trim() !== '');
 
@@ -475,8 +479,10 @@ const ConversationContent = ({
             if (!line.startsWith('data: ')) continue;
             const jsonStr = line.slice(6).trim();
             if (!jsonStr) continue;
-            const data = JSON.parse(jsonStr);
+            const {data} = JSON.parse(jsonStr);
             // 处理 type 为 think 的消息
+            console.log(data);
+            
             if (data.type === 'reasoning') {
               reasoning += data.content;  // 累积完整内容
               setMessages(prev =>
@@ -652,7 +658,7 @@ const ConversationContent = ({
                         </div>
                       )}
                       {/* HTML内容渲染或源码显示 */}
-                      {message.htmlContent && message.type === 'assistant' && (
+                      {/* {message.htmlContent && message.type === 'assistant' && (
                         <div className="mb-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-gray-600">生成内容:</span>
@@ -690,7 +696,7 @@ const ConversationContent = ({
                             />
                           )}
                         </div>
-                      )}
+                      )} */}
                       <div className="markdown-content whitespace-pre-wrap break-words">
                         <ReactMarkdown
                           remarkPlugins={[remarkMath, remarkGfm]}

@@ -2,7 +2,7 @@
 import { Plus } from "lucide-react";
 import ConversationList from "./ConversationList";
 import { ConversationData, createConversation } from "@/api/conversation";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 
 interface SidebarProps {
   onNewChat: (newConv) => void;
@@ -18,7 +18,7 @@ const Sidebar = ({
   onFavoriteConversation 
 }: SidebarProps) => {
 
-  const conversationsList =  useRef(null)
+  const conversationsList = useRef(null)
   const handleNewChat = async () => {
     const newConv = await createConversation({
       title: '新对话',

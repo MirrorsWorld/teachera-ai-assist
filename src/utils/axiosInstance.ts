@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 // 创建axios实例
 const service = axios.create({
   // baseURL: "http://localhost:5173",
-  baseURL: import.meta.env.VITE_API_URL, // 从环境变量获取基础API地址
+  // baseURL: import.meta.env.VITE_API_URL, // 从环境变量获取基础API地址
   timeout: 15000, // 请求超时时间
   // 设置跨域 Cookie
   withCredentials: true,

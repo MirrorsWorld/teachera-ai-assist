@@ -1,23 +1,21 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import MainContent from "../components/MainContent";
 import ConversationContent from "../components/ConversationContent";
 import HtmlContent from "../components/HtmlContent";
-import { ConversationData, createConversation, deleteConversation, getConversation, getConversationList } from "@/api/conversation";
+import { ConversationData, getConversation } from "@/api/conversation";
 import { toast } from "@/hooks/use-toast";
 
 export type ViewMode = 'welcome' | 'conversation';
 
 const Index = () => {
-  // const [isLoggedIn] = useState(localStorage.getItem("token") ? true : false); // 模拟登录状态，可以后续连接到真实的认证系统>
-  const [isLoggedIn] = useState(true); // 模拟登录状态，可以后续连接到真实的认证系统>
+  const [isLoggedIn] = useState(localStorage.getItem("token") ? true : false); // 模拟登录状态，可以后续连接到真实的认证系统>
   const [activeTitle, setActiveTitle] = useState("我是你的A教师助理TeacherA");
   const [viewMode, setViewMode] = useState<ViewMode>('welcome');
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
-  const [htmlCode, setHtmlCode] = useState<string>('');
 
   const handleNewChat = async (newConv) => {
     try {
@@ -68,7 +66,7 @@ const Index = () => {
     <div className="min-h-screen flex flex-col font-roboto">
       <Header />
 
-      <div className={`flex flex-1  mx-auto w-full p-5 gap-6 h-[calc(100vh-80px)] ${!isLoggedIn ? 'justify-center' : ''}`}>
+      <div className={`flex flex-1  mx-auto w-full p-5 gap-6 ${!isLoggedIn ? 'justify-center' : ''}`}>
         {isLoggedIn && (
           <div className="hidden lg:block">
             <Sidebar
