@@ -28,22 +28,20 @@ const ConversationList = forwardRef(({
         limit: 100
       })
       console.info('获取会话列表:', data)
-      setConversations(data.map((conv, i) => ({ ...conv, active: i === 0 })))
-      // setConversations(data)
+      setConversations(data.map((conv) => ({ ...conv, active: false })))
     } catch (error) {
       console.error('获取会话列表失败:', error)
     } finally {
       setLoading(false)
     }
   }
-
   useEffect(() => {
     fetchData()
   }, [])
 
-  useEffect(() => {
-    console.info('会话列表变化:', conversations)
-  }, [conversations])
+  // useEffect(() => {
+  //   console.info('会话列表变化:', conversations)
+  // }, [conversations])
 
   if (loading) return <div className='p-3 text-gray-500'>加载中...</div>
   if (!conversations.length) return <div className='p-3 text-gray-500'>暂无会话记录</div>
@@ -93,7 +91,8 @@ const ConversationList = forwardRef(({
   };
 
   return (
-    <div className="h-full overflow-y-auto mt-5 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+    //加滚动条
+    <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-[#4DABF7] scrollbar-track-gray-100 scrollbar-thumb-rounded-full">
       {conversations.map((conversation, index) => (
         <div
           key={conversation.id}

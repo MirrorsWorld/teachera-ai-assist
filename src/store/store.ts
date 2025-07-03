@@ -29,13 +29,13 @@ const useHtmlStore = create<HtmlState>((set) => ({
             .container {
                 display: flex;
                 gap: 20px;
-                max-width: 700px;
+                max-width: 1200px;
                 margin: 0 auto;
             }
             
             .ggb-container {
-                width: 600px;
-                height: 400px;
+                width: 800px;
+                height: 600px;
                 background-color: white;
                 border-radius: 8px;
                 box-shadow: 0 2px 10px rgba(0,0,0,0.1);
