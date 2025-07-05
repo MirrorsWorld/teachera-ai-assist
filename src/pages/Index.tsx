@@ -18,6 +18,7 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("welcome")
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null)
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null)
+  const [initialMessage, setInitialMessage] = useState<string>("")
 
   // 从您的原有store获取HTML内容
   const { htmlCode } = useHtmlStore()
@@ -39,13 +40,19 @@ const Index = () => {
     setShowHtmlPanel(!showHtmlPanel)
   }
 
-  const handleNewChat = async (newConv: ConversationData) => {
+  const handleNewChat = async (newConv: ConversationData, initialMsg?: string) => {
     try {
       setActiveTitle(newConv.title)
       setViewMode("conversation")
       setSelectedConversationId(newConv.id)
       const selectedConversation = await getConversation(newConv.id)
       setSelectedConversation(selectedConversation)
+      
+      // 保存初始消息，用于自动发送
+      if (initialMsg) {
+        setInitialMessage(initialMsg)
+      }
+      
       toast({ title: "对话创建成功", description: "已准备就绪" })
     } catch (error) {
       toast({
@@ -62,6 +69,8 @@ const Index = () => {
     setSelectedConversationId(conversation.id)
     const selectedConversation = await getConversation(conversation.id)
     setSelectedConversation(selectedConversation)
+    // 清除初始消息，因为这是点击已有对话
+    setInitialMessage("")
   }
 
   const handleDeleteConversation = async (id: number) => {
@@ -74,6 +83,11 @@ const Index = () => {
 
   const handleFavoriteConversation = (id: number) => {
     // 收藏逻辑
+  }
+
+  // 处理初始消息发送完成
+  const handleInitialMessageSent = () => {
+    setInitialMessage("")
   }
 
   return (
@@ -106,8 +120,9 @@ const Index = () => {
                 onDelete={handleDeleteConversation}
                 onFavorite={handleFavoriteConversation}
                 isFavorited={selectedConversation.favorited || false}
-                onToggleHtmlPanel={toggleHtmlPanel} // 
-
+                onToggleHtmlPanel={toggleHtmlPanel}
+                initialMessage={initialMessage}
+                onInitialMessageSent={handleInitialMessageSent}
               />
             )
           )}

@@ -30,6 +30,8 @@ export interface ConversationContentProps {
   onFavorite: (id: number) => void;
   isFavorited: boolean;
   onToggleHtmlPanel?: () => void // 新增：切换HTML预览面板的回调函数
+  initialMessage?: string; // 新增：初始消息，用于自动发送
+  onInitialMessageSent?: () => void; // 新增：初始消息发送完成的回调
 }
 
 export interface MessageQuery {

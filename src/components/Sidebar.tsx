@@ -1,11 +1,10 @@
-
 import { Plus } from "lucide-react";
 import ConversationList from "./ConversationList";
 import { ConversationData, createConversation } from "@/api/conversation";
 import { useEffect, useRef } from "react";
 
 interface SidebarProps {
-  onNewChat: (newConv) => void;
+  onNewChat: (newConv: ConversationData, initialMessage?: string) => void;
   onConversationClick: (conversation: ConversationData) => void;
   onDeleteConversation: (id: number) => void;
   onFavoriteConversation: (id: number) => void;

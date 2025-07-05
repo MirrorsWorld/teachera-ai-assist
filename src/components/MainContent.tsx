@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import WelcomeSection from "./WelcomeSection";
 import MessageInput from "./MessageInput";
@@ -9,7 +8,7 @@ import { X, Upload, Play } from "lucide-react"
 
 interface MainContentProps {
   activeTitle?: string;
-  onNewConversation:(newConv) => void;
+  onNewConversation:(newConv: ConversationData, initialMessage?: string) => void;
 }
 
 const MainContent = ({ 
@@ -25,9 +24,10 @@ const MainContent = ({
     if (message.trim() !== '') {
       console.log(`发送消息: ${message}`);
       const newConv = await createConversation({
-        title: '新对话',
+        title: message.length > 20 ? message.substring(0, 20) + '...' : message,
       });
-      onNewConversation(newConv);
+      // 传递初始消息给父组件
+      onNewConversation(newConv, message.trim());
       setMessage('');
     }
   };
@@ -83,7 +83,9 @@ const MainContent = ({
       const newConv = await createConversation({
         title: `试题分析: ${uploadedFileName}`,
       })
-      onNewConversation(newConv)
+      // 传递图片分析请求作为初始消息
+      const analysisMessage = `请帮我分析这张图片中的试题内容：${uploadedFileName}`;
+      onNewConversation(newConv, analysisMessage)
       // 清空预览状态
       setUploadedImage(null)
       setUploadedFileName("")

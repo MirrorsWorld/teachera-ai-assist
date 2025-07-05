@@ -18,6 +18,8 @@ interface ExtendedConversationContentProps extends ConversationContentProps {
   hasHtmlContent?: boolean
   showHtmlPreview?: boolean
   onToggleHtmlPreview?: () => void
+  initialMessage?: string
+  onInitialMessageSent?: () => void
 }
 
 
@@ -341,6 +343,8 @@ const ConversationContent  = ({
   onFavorite,
   isFavorited,
   onToggleHtmlPanel, // 新增的prop
+  initialMessage,
+  onInitialMessageSent,
 
 }: ConversationContentProps) => {
   const [showActions, setShowActions] = useState(false);
@@ -366,7 +370,7 @@ const ConversationContent  = ({
   };
 
   // 模拟对话消息数据
-  const [messages, setMessages] = useState<MessageData[]>(test_data);
+  const [messages, setMessages] = useState<MessageData[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -402,6 +406,146 @@ const ConversationContent  = ({
     // }
     // fetchData()
   }, [conversationId])
+
+  // 处理初始消息自动发送
+  useEffect(() => {
+    if (initialMessage && conversationId) {
+      // 自动发送初始消息
+      handleSendInitialMessage(initialMessage);
+    }
+  }, [initialMessage, conversationId]);
+
+  const handleSendInitialMessage = async (message: string) => {
+    if (!conversationId) return;
+
+    // 创建临时用户消息
+    const tempId = Date.now();
+    setMessages(prev => [...prev, {
+      id: tempId,
+      type: 'user',
+      answer: message,
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    }]);
+
+    try {
+      const controller = new AbortController();
+      setAbortController(controller);
+  
+      // 记录assistant回复开始时间
+      const startTime = Date.now();
+
+      // 流式请求
+      const response = await fetch('/api/v2/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          message: message,
+          message_order: 1,
+          user_id: 1,
+          title: title,
+        }),
+        signal: controller.signal
+      });
+
+      // 创建assistant消息
+      const assistantId = Date.now();
+      setMessages(prev => [...prev, {
+        id: assistantId,
+        type: 'assistant',
+        reasoning: '',
+        answer: '',
+        htmlContent: '',
+        timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        isStreaming: true,
+      }]);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let answer = '';
+      let reasoning = '';
+      let htmlContent = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        
+        // 处理可能包含多个 JSON 对象的情况（以 "data: " 分隔）
+        const dataLines = chunk.split('\n')
+
+        for (const line of dataLines) {
+          try {
+            // 确保是以 "data: " 开头的有效行
+            if (!line.startsWith('data: ')) continue;
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr) continue;
+            const {data} = JSON.parse(jsonStr);
+            // 处理 type 为 think 的消息
+            if (data.type === 'reasoning') {
+              reasoning += data.content;  // 累积完整内容
+              setMessages(prev =>
+                prev.map(msg =>
+                  msg.id === assistantId
+                    ? { ...msg, reasoning: reasoning } // 直接使用累积的完整内容
+                    : msg
+                )
+              );
+            }
+            // 处理 type 为 html_code 的消息
+            if (data.type === 'html_code') {
+              htmlContent += data.content;  // 累积完整内容
+              setMessages(prev =>
+                prev.map(msg =>
+                  msg.id === assistantId
+                    ? { ...msg, htmlContent: htmlContent } // 直接使用累积的完整内容
+                    : msg
+                )
+              );
+            }
+            // 处理 type 为 answer 的消息
+            if (data.type === 'answer') {
+              answer += data.content;  // 累积完整内容
+              setMessages(prev =>
+                prev.map(msg =>
+                  msg.id === assistantId
+                    ? { ...msg, answer: answer } // 直接使用累积的完整内容
+                    : msg
+                )
+              );
+            }
+          } catch (error) {
+            console.error('Error parsing line:', error, line);
+          }
+        }
+      }
+
+      // 计算总耗时（秒）
+      const durationInSeconds = Math.round((Date.now() - startTime) / 1000);
+
+      // 更新完成状态并添加durationInSeconds
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === assistantId ? { ...msg, isStreaming: false, durationInSeconds } : msg
+        )
+      );
+      handleReset(htmlContent)
+
+      // 通知父组件初始消息发送完成
+      if (onInitialMessageSent) {
+        onInitialMessageSent();
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('流式请求异常:', error);
+      }
+    } finally {
+      setAbortController(null);
+    }
+  };
 
   const handleDelete = async () => {
     if (window.confirm('确定要删除这个对话吗？')) {
