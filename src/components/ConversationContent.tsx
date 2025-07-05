@@ -7,8 +7,8 @@ import ReactMarkdown from "react-markdown"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import remarkGfm from "remark-gfm"
-import useHtmlStore from "@/store/store" 
-import { ReasoningBlock } from "./ui/reasoning-block" 
+import useHtmlStore from "@/store/store"
+import { ReasoningBlock } from "./ui/reasoning-block"
 import FileModal from "./ui/file-modal"
 
 
@@ -336,7 +336,7 @@ const test_data: MessageData[] = [
   }
 ]
 
-const ConversationContent  = ({
+const ConversationContent = ({
   conversationId,
   title,
   onDelete,
@@ -355,16 +355,16 @@ const ConversationContent  = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [enableDeepThinking, setEnableDeepThinking] = useState(true);
 
-  
+
 
   // 在现有的 useRef 声明后添加
   const prevHtmlContentRef = useRef<string>("")
 
-   // 从 store 获取状态和方法
+  // 从 store 获取状态和方法
   const { htmlCode, reset } = useHtmlStore();
-  
+
   // 示例重置函数
-  const handleReset = (val:string) => {
+  const handleReset = (val: string) => {
     // 调用 reset 并传入新的 HTML 字符串
     reset(val);
   };
@@ -430,7 +430,7 @@ const ConversationContent  = ({
     try {
       const controller = new AbortController();
       setAbortController(controller);
-  
+
       // 记录assistant回复开始时间
       const startTime = Date.now();
 
@@ -468,22 +468,29 @@ const ConversationContent  = ({
       let answer = '';
       let reasoning = '';
       let htmlContent = '';
+      let buffer = ''; // 用于暂存不完整的 JSON 数据
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value);
-        
-        // 处理可能包含多个 JSON 对象的情况（以 "data: " 分隔）
-        const dataLines = chunk.split('\n')
+        buffer += chunk; // 拼接新 chunk
+        console.log('buffer:', buffer);
+        // 检查是否包含完整的 JSON 对象（以 "data: " 开头，以换行符分隔）
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // 保留未处理的部分
 
-        for (const line of dataLines) {
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+
           try {
             // 确保是以 "data: " 开头的有效行
             if (!line.startsWith('data: ')) continue;
             const jsonStr = line.slice(6).trim();
             if (!jsonStr) continue;
-            const {data} = JSON.parse(jsonStr);
+            const { data } = JSON.parse(jsonStr);
             // 处理 type 为 think 的消息
             if (data.type === 'reasoning') {
               reasoning += data.content;  // 累积完整内容
@@ -507,7 +514,7 @@ const ConversationContent  = ({
               );
             }
             // 处理 type 为 answer 的消息
-            if (data.type === 'answer') {
+            if (data.type === 'result') {
               answer += data.content;  // 累积完整内容
               setMessages(prev =>
                 prev.map(msg =>
@@ -522,6 +529,60 @@ const ConversationContent  = ({
           }
         }
       }
+      // while (true) {
+      //   const { done, value } = await reader.read();
+      //   if (done) break;
+      //   const chunk = decoder.decode(value);
+      //   console.log('chunk:', chunk);
+
+      //   // 处理可能包含多个 JSON 对象的情况（以 "data: " 分隔）
+      //   const dataLines = chunk.split('\n')
+
+      //   for (const line of dataLines) {
+      //     try {
+      //       // 确保是以 "data: " 开头的有效行
+      //       if (!line.startsWith('data: ')) continue;
+      //       const jsonStr = line.slice(6).trim();
+      //       if (!jsonStr) continue;
+      //       const { data } = JSON.parse(jsonStr);
+      //       // 处理 type 为 think 的消息
+      //       if (data.type === 'reasoning') {
+      //         reasoning += data.content;  // 累积完整内容
+      //         setMessages(prev =>
+      //           prev.map(msg =>
+      //             msg.id === assistantId
+      //               ? { ...msg, reasoning: reasoning } // 直接使用累积的完整内容
+      //               : msg
+      //           )
+      //         );
+      //       }
+      //       // 处理 type 为 html_code 的消息
+      //       if (data.type === 'html_code') {
+      //         htmlContent += data.content;  // 累积完整内容
+      //         setMessages(prev =>
+      //           prev.map(msg =>
+      //             msg.id === assistantId
+      //               ? { ...msg, htmlContent: htmlContent } // 直接使用累积的完整内容
+      //               : msg
+      //           )
+      //         );
+      //       }
+      //       // 处理 type 为 answer 的消息
+      //       if (data.type === 'answer') {
+      //         answer += data.content;  // 累积完整内容
+      //         setMessages(prev =>
+      //           prev.map(msg =>
+      //             msg.id === assistantId
+      //               ? { ...msg, answer: answer } // 直接使用累积的完整内容
+      //               : msg
+      //           )
+      //         );
+      //       }
+      //     } catch (error) {
+      //       console.error('Error parsing line:', error, line);
+      //     }
+      //   }
+      // }
 
       // 计算总耗时（秒）
       const durationInSeconds = Math.round((Date.now() - startTime) / 1000);
@@ -561,7 +622,7 @@ const ConversationContent  = ({
   };
 
   const [abortController, setAbortController] = useState<AbortController | null>(null);
-  
+
   // 删除重复的handleSendMessage函数
   const handleSend = async () => {
     if (!newMessage.trim() || !conversationId) return;
@@ -581,7 +642,7 @@ const ConversationContent  = ({
     try {
       const controller = new AbortController();
       setAbortController(controller);
-  
+
       // 记录assistant回复开始时间
       const startTime = Date.now();
 
@@ -625,7 +686,7 @@ const ConversationContent  = ({
         if (done) break;
 
         const chunk = decoder.decode(value);
-        
+
         // 处理可能包含多个 JSON 对象的情况（以 "data: " 分隔）
         const dataLines = chunk.split('\n')
 
@@ -635,7 +696,7 @@ const ConversationContent  = ({
             if (!line.startsWith('data: ')) continue;
             const jsonStr = line.slice(6).trim();
             if (!jsonStr) continue;
-            const {data} = JSON.parse(jsonStr);
+            const { data } = JSON.parse(jsonStr);
             // 处理 type 为 think 的消息
             if (data.type === 'reasoning') {
               reasoning += data.content;  // 累积完整内容
@@ -774,12 +835,12 @@ const ConversationContent  = ({
     type: "code" | "image" | "document" | "link"
     date?: string
   }[] = [
-    {
-      name: "trigonometric_functions.html",
-      type: "code",
-      date: "Thursday"
-    }
-  ]
+      {
+        name: "trigonometric_functions.html",
+        type: "code",
+        date: "Thursday"
+      }
+    ]
 
 
 
@@ -800,14 +861,14 @@ const ConversationContent  = ({
             </button>
 
             {showActions && (
-            <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-10 min-w-[120px]">
-              <button
-                onClick={handleFavorite}
-                className={`w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-gray-50 rounded-t-lg ${isFavorited ? 'text-red-500' : 'text-gray-700'
-                  }`}
-              >
-                <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
-                {isFavorited ? '取消收藏' : '收藏'}
+              <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-10 min-w-[120px]">
+                <button
+                  onClick={handleFavorite}
+                  className={`w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-gray-50 rounded-t-lg ${isFavorited ? 'text-red-500' : 'text-gray-700'
+                    }`}
+                >
+                  <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                  {isFavorited ? '取消收藏' : '收藏'}
                 </button>
                 <button
                   onClick={handleDelete}
@@ -846,116 +907,116 @@ const ConversationContent  = ({
                     </div>
                   </div>
                 ) : (
-                        <div className="flex-1">
-                          {/* 深度思考部分 */}
-                          {message.reasoning && (
-                            <div className="max-w-[95%] w-full mb-3">
-                              <ReasoningBlock
-                                reasoning={message.reasoning}
-                                isStreaming={!!message.isStreaming}
-                                durationInSeconds={message.durationInSeconds}
-                              />
-                            </div>
-                          )}
-                          <div className="max-w-[95%] order-1 mt-2">
-                            <div className="p-4 rounded-lg relative bg-white text-gray-900 shadow-sm">
-                              {message.isStreaming && (
-                                <div className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                </div>
-                              )}
-
-                              {/* HTML内容渲染或源码显示*/}
-                              {message.htmlContent && message.type === "assistant" && (
-                                <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                  
-                                  {/* 左边：HTML 文件卡片 + 预览按钮 */}
-                                  <div className="flex flex-wrap justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 w-full sm:w-[48%]">
-                                    <div className="flex items-center gap-2 text-blue-700">
-                                      <Code className="w-5 h-5" />
-                                      <div className="flex flex-col">
-                                        <span className="font-medium text-sm">生成文件.html</span>
-                                        <span className="text-xs text-blue-500">
-                                          Code · {message.htmlContent ? formatHtmlSize(message.htmlContent) : "0 B"}
-                                        </span>
-
-                                      </div>
-                                    </div>
-                                    <button
-                                      onClick={onToggleHtmlPanel}
-                                      className="text-xs text-blue-600 hover:text-blue-800 underline px-2 py-1 rounded hover:bg-blue-100 transition-colors flex items-center gap-1 whitespace-nowrap"
-                                    >
-                                      <Eye className="w-3 h-3" />
-                                      展开预览
-                                    </button>
-                                  </div>
-
-                                  {/* 右边：查看所有文件按钮 */}
-                                  <button
-                                    onClick={() => setFileModalOpen(true)}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors w-full sm:w-[48%]"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
-                                    </svg>
-                                    查看所有文件
-                                  </button>
-
-                                </div>
-                              )}
-
-                              <div className="markdown-content whitespace-pre-wrap break-words">
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkMath, remarkGfm]}
-                                  rehypePlugins={[rehypeKatex]}
-                                  components={{
-                                    a: ({ node, ...props }) => (
-                                      <a
-                                        {...props}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-500 hover:underline"
-                                      />
-                                    ),
-                                    code: ({ node, className, children, ...props }) => {
-                                      return (
-                                        <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
-                                          <code className="block p-2 text-sm text-black-100" {...props}>
-                                            {children}
-                                          </code>
-                                        </div>
-                                      )
-                                    },
-                                  }}
-                                >
-                                  {message.answer}
-                                </ReactMarkdown>
-                              </div>
-                            </div>
-                            <div className='text-xs text-gray-500 mt-1 text-left'>
-                              {message.timestamp}
-                            </div>                          
+                  <div className="flex-1">
+                    {/* 深度思考部分 */}
+                    {message.reasoning && (
+                      <div className="max-w-[95%] w-full mb-3">
+                        <ReasoningBlock
+                          reasoning={message.reasoning}
+                          isStreaming={!!message.isStreaming}
+                          durationInSeconds={message.durationInSeconds}
+                        />
+                      </div>
+                    )}
+                    <div className="max-w-[95%] order-1 mt-2">
+                      <div className="p-4 rounded-lg relative bg-white text-gray-900 shadow-sm">
+                        {message.isStreaming && (
+                          <div className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                            <Loader2 className="w-3 h-3 animate-spin" />
                           </div>
+                        )}
+
+                        {/* HTML内容渲染或源码显示*/}
+                        {message.htmlContent && message.type === "assistant" && (
+                          <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+                            {/* 左边：HTML 文件卡片 + 预览按钮 */}
+                            <div className="flex flex-wrap justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 w-full sm:w-[48%]">
+                              <div className="flex items-center gap-2 text-blue-700">
+                                <Code className="w-5 h-5" />
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-sm">生成文件.html</span>
+                                  <span className="text-xs text-blue-500">
+                                    Code · {message.htmlContent ? formatHtmlSize(message.htmlContent) : "0 B"}
+                                  </span>
+
+                                </div>
+                              </div>
+                              <button
+                                onClick={onToggleHtmlPanel}
+                                className="text-xs text-blue-600 hover:text-blue-800 underline px-2 py-1 rounded hover:bg-blue-100 transition-colors flex items-center gap-1 whitespace-nowrap"
+                              >
+                                <Eye className="w-3 h-3" />
+                                展开预览
+                              </button>
+                            </div>
+
+                            {/* 右边：查看所有文件按钮 */}
+                            <button
+                              onClick={() => setFileModalOpen(true)}
+                              className="flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors w-full sm:w-[48%]"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
+                              </svg>
+                              查看所有文件
+                            </button>
+
+                          </div>
+                        )}
+
+                        <div className="markdown-content whitespace-pre-wrap break-words">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkMath, remarkGfm]}
+                            rehypePlugins={[rehypeKatex]}
+                            components={{
+                              a: ({ node, ...props }) => (
+                                <a
+                                  {...props}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 hover:underline"
+                                />
+                              ),
+                              code: ({ node, className, children, ...props }) => {
+                                return (
+                                  <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
+                                    <code className="block p-2 text-sm text-black-100" {...props}>
+                                      {children}
+                                    </code>
+                                  </div>
+                                )
+                              },
+                            }}
+                          >
+                            {message.answer}
+                          </ReactMarkdown>
                         </div>
-                      )}
+                      </div>
+                      <div className='text-xs text-gray-500 mt-1 text-left'>
+                        {message.timestamp}
+                      </div>
                     </div>
-                  ),
-              )}
+                  </div>
+                )}
+              </div>
+            ),
+            )}
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
       </div>
 
       {/* 输入区域 */}
-      <div className="px-6 pb-6 pt-4 max-w-4xl mx-auto w-full">       
+      <div className="px-6 pb-6 pt-4 max-w-4xl mx-auto w-full">
         {selectedImage && (
           <div className="mb-4 relative inline-block">
             <img
               src={selectedImage}
               alt="准备发送的图片"
               className="max-h-20 rounded-lg"
-            />            
+            />
             <button
               onClick={removeSelectedImage}
               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
@@ -980,69 +1041,69 @@ const ConversationContent  = ({
         </div> */}
 
         {/* 主输入容器 */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
-            <div className="flex items-end p-3 gap-2">
-              {/* 左侧工具按钮 */}
-              <div className="flex items-center flex-shrink-0">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
+          <div className="flex items-end p-3 gap-2">
+            {/* 左侧工具按钮 */}
+            <div className="flex items-center flex-shrink-0">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
 
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                title="上传图片"
+              >
+                <Paperclip className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 输入框 */}
+            <div className="flex-1 min-w-0">
+              <textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="继续对话..."
+                className="w-full px-3 py-2 border-0 outline-none resize-none bg-transparent text-gray-900 placeholder-gray-500 min-h-[24px] max-h-32"
+                rows={1}
+                style={{
+                  height: "auto",
+                  minHeight: "24px",
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement
+                  target.style.height = "auto"
+                  target.style.height = target.scrollHeight + "px"
+                }}
+              />
+            </div>
+
+            {/* 右侧按钮组 */}
+            <div className="flex items-center flex-shrink-0">
+              {abortController ? (
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="上传图片"
+                  onClick={() => abortController.abort()}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
                 >
-                  <Paperclip className="w-5 h-5" />
+                  停止
                 </button>
-              </div>
-
-              {/* 输入框 */}
-              <div className="flex-1 min-w-0">
-                <textarea
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="继续对话..."
-                  className="w-full px-3 py-2 border-0 outline-none resize-none bg-transparent text-gray-900 placeholder-gray-500 min-h-[24px] max-h-32"
-                  rows={1}
-                  style={{
-                    height: "auto",
-                    minHeight: "24px",
-                  }}
-                  onInput={(e) => {
-                    const target = e.target as HTMLTextAreaElement
-                    target.style.height = "auto"
-                    target.style.height = target.scrollHeight + "px"
-                  }}
-                />
-              </div>
-
-              {/* 右侧按钮组 */}
-              <div className="flex items-center flex-shrink-0">
-                {abortController ? (
-                  <button
-                    onClick={() => abortController.abort()}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-                  >
-                    停止
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleSend}
-                    disabled={!newMessage.trim() && !selectedImage}
-                    className="bg-primary text-white p-2.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+              ) : (
+                <button
+                  onClick={handleSend}
+                  disabled={!newMessage.trim() && !selectedImage}
+                  className="bg-primary text-white p-2.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
+        </div>
 
         <p className="text-xs text-gray-500 mt-3 text-center">
           支持上传图片，按 Enter 发送，Shift + Enter 换行

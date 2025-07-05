@@ -7,14 +7,9 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     proxy: {
-      '/api/v2':{
-        target: 'http://106.52.162.78:8001/',
-        // target: 'http://127.0.0.1:8080/',
-        changeOrigin: true,
-        // rewrite: (path) => path.replace(/^\/api/, ''),
-      },
       '/api':{
-        target: 'https://www.gxxuetu.cn',
+        target: 'http://106.52.162.78:8080/',
+        // target: 'http://127.0.0.1:8080/',
         changeOrigin: true,
         // rewrite: (path) => path.replace(/^\/api/, ''),
       },
