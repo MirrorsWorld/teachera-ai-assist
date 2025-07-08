@@ -63,6 +63,29 @@ const HtmlContent = ({ onClose }: HtmlContentProps) => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v6m0 0l-3-3m3 3l3-3M12 4v8" />
             </svg>
           </button>
+          <button
+            onClick={() => {
+              // 新窗口打开功能
+              const blob = new Blob([htmlCode], { type: 'text/html' })
+              const url = URL.createObjectURL(blob)
+              window.open(url, '_blank')
+              // 可选：不立即revoke，避免新窗口加载失败
+              setTimeout(() => URL.revokeObjectURL(url), 10000)
+            }}
+            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-blue-700"
+            title="在新窗口打开"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14 3h7v7m0 0L10 21l-7-7L21 10z" />
+            </svg>
+          </button>
 
           {/* 新增关闭按钮 */}
           {onClose && (

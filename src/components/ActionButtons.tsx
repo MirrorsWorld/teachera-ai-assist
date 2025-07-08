@@ -10,7 +10,7 @@ interface ActionButtonsProps {
 const ActionButtons = ({ onUpload, onKnowledge, onMistakes }: ActionButtonsProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-      <div 
+      <div
         onClick={onUpload}
         className="bg-white rounded-xl p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)] transition-all duration-300 border border-gray-200 flex flex-col items-center text-center cursor-pointer animate-fade-in-delay-1 hover:transform hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,0,0,0.1)] hover:border-accent"
       >
