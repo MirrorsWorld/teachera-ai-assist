@@ -19,7 +19,12 @@ const ConversationList = forwardRef(({
   useImperativeHandle(ref, () => ({
     fetchData
   }))
-  const [conversations, setConversations] = useState<ConversationData[]>([])
+  const conversationData = [
+    { id: 1, title: '对话标题', subject: '666', date: '2023-07-01', time: '12:00', active: true },
+    { id: 2, title: '对话标题', subject: '666', date: '2023-07-02', time: '14:00', active: false },
+  ]
+
+  const [conversations, setConversations] = useState<ConversationData[]>(conversationData)
   const [loading, setLoading] = useState(true)
   const fetchData = async () => {
     try {
@@ -67,8 +72,6 @@ const ConversationList = forwardRef(({
             description: error instanceof Error? error.message : '网络异常',
             variant: 'destructive'
           });
-        } finally {
-          
         }
       }
       await del(id);
@@ -97,9 +100,9 @@ const ConversationList = forwardRef(({
         <div
           key={conversation.id}
           onClick={() => handleConversationClick(conversation)}
-          className={`p-3.5 rounded-xl mb-2.5 cursor-pointer transition-all duration-300 border-l-4 animate-fade-in group relative ${
+          className={`p-3.5 cursor-pointer transition-all duration-300 border-l-4 animate-fade-in group relative ${
             conversation.active
-              ? 'bg-primary/10 border-l-primary'
+              ? 'bg-primary/10 border-l-primary border-r border-r-primary'
               : 'border-l-transparent hover:bg-gray-100'
           }`}
           style={{ animationDelay: `${index * 0.1}s` }}

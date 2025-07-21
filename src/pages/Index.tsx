@@ -130,8 +130,8 @@ const Index = () => {
 
         {/* 右侧 HTML 预览面板 - 条件渲染 */}
         {isLoggedIn && showHtmlPanel && (
-          <div className="w-[46%] p-4 bg-gray-50 transition-all duration-300 flex-shrink-0">
-            <div className="h-full bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col">
+          <div className="w-[46%] bg-gray-50 transition-all duration-300 flex-shrink-0">
+            <div className="h-full bg-white border border-gray-200 flex flex-col">
               <HtmlContent onClose={() => setShowHtmlPanel(false)} />
             </div>
           </div>

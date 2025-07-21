@@ -1,6 +1,9 @@
 import * as React from "react"
 import { ChevronDown, Sparkles} from "lucide-react"
-
+import ReactMarkdown from "react-markdown"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
+import remarkGfm from "remark-gfm"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./collapsible"
 
 interface ReasoningBlockProps {
@@ -43,8 +46,32 @@ export function ReasoningBlock({ reasoning, isStreaming, durationInSeconds }: Re
 
       {/* 折叠器的内容部分 */}
       <CollapsibleContent>
-        <div className="border-l-2 border-slate-200 pl-4 py-2 text-sm text-slate-800 whitespace-pre-wrap">
+        <div className="border-l-2 border-slate-200 pl-4 py-2 text-sm text-slate-800">
+        <ReactMarkdown
+          remarkPlugins={[remarkMath, remarkGfm]}
+          rehypePlugins={[rehypeKatex]}
+          components={{
+            a: ({ node, ...props }) => (
+              <a
+                {...props}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline"
+              />
+            ),
+            code: ({ node, className, children, ...props }) => {
+              return (
+                <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
+                  <code className="block p-2 text-sm text-black-100" {...props}>
+                    {children}
+                  </code>
+                </div>
+              )
+            },
+          }}
+        >
           {reasoning}
+        </ReactMarkdown>
         </div>
       </CollapsibleContent>
     </Collapsible>

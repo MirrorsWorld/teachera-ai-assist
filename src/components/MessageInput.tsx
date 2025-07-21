@@ -23,7 +23,7 @@ const MessageInput = ({ message, setMessage, onSendMessage }: MessageInputProps)
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
-          className="w-full p-5 rounded-xl border border-gray-200 font-roboto text-base transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.05)] focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(67,97,238,0.2)]"
+          className="w-full p-5 rounded-xl border border-gray-200 font-roboto text-base transition-all duration-300 focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(67,97,238,0.2)]"
           placeholder="输入你想要讲解的知识点或试题，自动生成对应的可视化内容"
         />
         <button

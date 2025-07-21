@@ -1,6 +1,6 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Heart, Trash2, MoreVertical, Send, ImageIcon, Code, Eye, Loader2, Paperclip } from "lucide-react"
+import { Heart, Trash2, MoreVertical, Send, ImageIcon, Code, Eye, Loader2, Paperclip, Check } from "lucide-react"
 import { ConversationContentProps, MessageData } from "../api/chat"
 import { ScrollArea } from "./ui/scroll-area"
 import ReactMarkdown from "react-markdown"
@@ -354,8 +354,11 @@ const ConversationContent = ({
   const [showHtmlSource, setShowHtmlSource] = useState<{ [key: number]: boolean }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [enableDeepThinking, setEnableDeepThinking] = useState(true);
-
-
+  const [stepStatus, setStepStatus] = useState([false, false, false, false, false]); // 5步任务完成状态
+  const stepTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastReasoningUpdateRef = useRef<number>(Date.now());
+  const [simulated, setSimulated] = useState(false);
+  const [reasoning, setReasoning] = useState('');
 
   // 在现有的 useRef 声明后添加
   const prevHtmlContentRef = useRef<string>("")
@@ -407,16 +410,9 @@ const ConversationContent = ({
     // fetchData()
   }, [conversationId])
 
-  // 处理初始消息自动发送
-  useEffect(() => {
-    if (initialMessage && conversationId) {
-      // 自动发送初始消息
-      handleSendInitialMessage(initialMessage);
-    }
-  }, [initialMessage, conversationId]);
-
-  const handleSendInitialMessage = async (message: string) => {
-    if (!conversationId) return;
+  // 合并后的统一消息发送函数
+  const handleSendMessage = async (message: string, isInitial = false) => {
+    if (!message.trim() || !conversationId) return;
 
     // 创建临时用户消息
     const tempId = Date.now();
@@ -425,16 +421,18 @@ const ConversationContent = ({
       type: 'user',
       answer: message,
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      ...(isInitial ? {} : { image: selectedImage })
     }]);
+
+    if (!isInitial) {
+      setNewMessage("");
+      setSelectedImage(null);
+    }
 
     try {
       const controller = new AbortController();
       setAbortController(controller);
-
-      // 记录assistant回复开始时间
       const startTime = Date.now();
-
-      // 流式请求
       const response = await fetch('/api/v2/chat', {
         method: 'POST',
         headers: {
@@ -450,8 +448,6 @@ const ConversationContent = ({
         }),
         signal: controller.signal
       });
-
-      // 创建assistant消息
       const assistantId = Date.now();
       setMessages(prev => [...prev, {
         id: assistantId,
@@ -462,64 +458,54 @@ const ConversationContent = ({
         timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         isStreaming: true,
       }]);
-
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let answer = '';
       let reasoning = '';
       let htmlContent = '';
-      let buffer = ''; // 用于暂存不完整的 JSON 数据
+      let buffer = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         const chunk = decoder.decode(value);
-        buffer += chunk; // 拼接新 chunk
-        console.log('buffer:', buffer);
-        // 检查是否包含完整的 JSON 对象（以 "data: " 开头，以换行符分隔）
+        buffer += chunk;
         const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // 保留未处理的部分
-
+        buffer = lines.pop() || '';
+        const localReasoning = reasoning;
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const jsonStr = line.slice(6).trim();
           if (!jsonStr) continue;
-
           try {
-            // 确保是以 "data: " 开头的有效行
-            if (!line.startsWith('data: ')) continue;
-            const jsonStr = line.slice(6).trim();
-            if (!jsonStr) continue;
             const { data } = JSON.parse(jsonStr);
-            // 处理 type 为 think 的消息
             if (data.type === 'reasoning') {
-              reasoning += data.content;  // 累积完整内容
+              reasoning += data.content;
+              setReasoning(localReasoning);
+              lastReasoningUpdateRef.current = Date.now();
               setMessages(prev =>
                 prev.map(msg =>
                   msg.id === assistantId
-                    ? { ...msg, reasoning: reasoning } // 直接使用累积的完整内容
+                    ? { ...msg, reasoning: localReasoning }
                     : msg
                 )
               );
             }
-            // 处理 type 为 html_code 的消息
             if (data.type === 'html_code') {
-              htmlContent += data.content;  // 累积完整内容
+              htmlContent += data.content;
               setMessages(prev =>
                 prev.map(msg =>
                   msg.id === assistantId
-                    ? { ...msg, htmlContent: htmlContent } // 直接使用累积的完整内容
+                    ? { ...msg, htmlContent: htmlContent }
                     : msg
                 )
               );
             }
-            // 处理 type 为 answer 的消息
             if (data.type === 'result') {
-              answer += data.content;  // 累积完整内容
+              answer += data.content;
               setMessages(prev =>
                 prev.map(msg =>
                   msg.id === assistantId
-                    ? { ...msg, answer: answer } // 直接使用累积的完整内容
+                    ? { ...msg, answer: answer }
                     : msg
                 )
               );
@@ -529,74 +515,14 @@ const ConversationContent = ({
           }
         }
       }
-      // while (true) {
-      //   const { done, value } = await reader.read();
-      //   if (done) break;
-      //   const chunk = decoder.decode(value);
-      //   console.log('chunk:', chunk);
-
-      //   // 处理可能包含多个 JSON 对象的情况（以 "data: " 分隔）
-      //   const dataLines = chunk.split('\n')
-
-      //   for (const line of dataLines) {
-      //     try {
-      //       // 确保是以 "data: " 开头的有效行
-      //       if (!line.startsWith('data: ')) continue;
-      //       const jsonStr = line.slice(6).trim();
-      //       if (!jsonStr) continue;
-      //       const { data } = JSON.parse(jsonStr);
-      //       // 处理 type 为 think 的消息
-      //       if (data.type === 'reasoning') {
-      //         reasoning += data.content;  // 累积完整内容
-      //         setMessages(prev =>
-      //           prev.map(msg =>
-      //             msg.id === assistantId
-      //               ? { ...msg, reasoning: reasoning } // 直接使用累积的完整内容
-      //               : msg
-      //           )
-      //         );
-      //       }
-      //       // 处理 type 为 html_code 的消息
-      //       if (data.type === 'html_code') {
-      //         htmlContent += data.content;  // 累积完整内容
-      //         setMessages(prev =>
-      //           prev.map(msg =>
-      //             msg.id === assistantId
-      //               ? { ...msg, htmlContent: htmlContent } // 直接使用累积的完整内容
-      //               : msg
-      //           )
-      //         );
-      //       }
-      //       // 处理 type 为 answer 的消息
-      //       if (data.type === 'answer') {
-      //         answer += data.content;  // 累积完整内容
-      //         setMessages(prev =>
-      //           prev.map(msg =>
-      //             msg.id === assistantId
-      //               ? { ...msg, answer: answer } // 直接使用累积的完整内容
-      //               : msg
-      //           )
-      //         );
-      //       }
-      //     } catch (error) {
-      //       console.error('Error parsing line:', error, line);
-      //     }
-      //   }
-      // }
-
-      // 计算总耗时（秒）
       const durationInSeconds = Math.round((Date.now() - startTime) / 1000);
-
-      // 更新完成状态并添加durationInSeconds
       setMessages(prev =>
         prev.map(msg =>
           msg.id === assistantId ? { ...msg, isStreaming: false, durationInSeconds } : msg
         )
       );
-      handleReset(htmlContent)
-
-      // 通知父组件初始消息发送完成
-      if (onInitialMessageSent) {
+      handleReset(htmlContent);
+      if (isInitial && onInitialMessageSent) {
         onInitialMessageSent();
       }
     } catch (error) {
@@ -605,8 +531,26 @@ const ConversationContent = ({
       }
     } finally {
       setAbortController(null);
+      if (stepTimerRef.current) {
+        clearInterval(stepTimerRef.current);
+        stepTimerRef.current = null;
+      }
+      setSimulated(false);
+      setStepStatus(prev => {
+        if (prev.slice(0, 4).every(Boolean) && !prev[4]) {
+          return [true, true, true, true, true];
+        }
+        return prev;
+      });
     }
   };
+
+  // 页面加载时自动发送初始消息
+  useEffect(() => {
+    if (initialMessage && conversationId) {
+      handleSendMessage(initialMessage, true);
+    }
+  }, [initialMessage, conversationId]);
 
   const handleDelete = async () => {
     if (window.confirm('确定要删除这个对话吗？')) {
@@ -623,143 +567,9 @@ const ConversationContent = ({
 
   const [abortController, setAbortController] = useState<AbortController | null>(null);
 
-  // 删除重复的handleSendMessage函数
-  const handleSend = async () => {
-    if (!newMessage.trim() || !conversationId) return;
-
-    setNewMessage("");
-    setSelectedImage(null);
-    // 创建临时消息
-    const tempId = Date.now();
-    setMessages(prev => [...prev, {
-      id: tempId,
-      type: 'user',
-      answer: newMessage,
-      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      image: selectedImage
-    }]);
-
-    try {
-      const controller = new AbortController();
-      setAbortController(controller);
-
-      // 记录assistant回复开始时间
-      const startTime = Date.now();
-
-      // 流式请求
-      const response = await fetch('/api/v2/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          message: newMessage,
-          message_order: 1,
-          user_id: 1,
-          title: "测试对话",
-          image_base64: selectedImage,
-        }),
-        signal: controller.signal
-      });
-
-      // 创建assistant消息
-      const assistantId = Date.now();
-      setMessages(prev => [...prev, {
-        id: assistantId,
-        type: 'assistant',
-        reasoning: '',
-        answer: '',
-        htmlContent: '',
-        timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-        isStreaming: true,
-      }]);
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let answer = '';
-      let reasoning = '';
-      let htmlContent = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-
-        // 处理可能包含多个 JSON 对象的情况（以 "data: " 分隔）
-        const dataLines = chunk.split('\n')
-
-        for (const line of dataLines) {
-          try {
-            // 确保是以 "data: " 开头的有效行
-            if (!line.startsWith('data: ')) continue;
-            const jsonStr = line.slice(6).trim();
-            if (!jsonStr) continue;
-            const { data } = JSON.parse(jsonStr);
-            // 处理 type 为 think 的消息
-            if (data.type === 'reasoning') {
-              reasoning += data.content;  // 累积完整内容
-              setMessages(prev =>
-                prev.map(msg =>
-                  msg.id === assistantId
-                    ? { ...msg, reasoning: reasoning } // 直接使用累积的完整内容
-                    : msg
-                )
-              );
-            }
-            // 处理 type 为 html_code 的消息
-            if (data.type === 'html_code') {
-              htmlContent += data.content;  // 累积完整内容
-              setMessages(prev =>
-                prev.map(msg =>
-                  msg.id === assistantId
-                    ? { ...msg, htmlContent: htmlContent } // 直接使用累积的完整内容
-                    : msg
-                )
-              );
-            }
-            // 处理 type 为 answer 的消息
-            if (data.type === 'answer') {
-              answer += data.content;  // 累积完整内容
-              setMessages(prev =>
-                prev.map(msg =>
-                  msg.id === assistantId
-                    ? { ...msg, answer: answer } // 直接使用累积的完整内容
-                    : msg
-                )
-              );
-            }
-          } catch (error) {
-            console.error('Error parsing line:', error, line);
-          }
-        }
-      }
-
-      // 计算总耗时（秒）
-      const durationInSeconds = Math.round((Date.now() - startTime) / 1000);
-
-      // 更新完成状态并添加durationInSeconds
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.id === assistantId ? { ...msg, isStreaming: false, durationInSeconds } : msg
-        )
-      );
-      handleReset(htmlContent)
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('流式请求异常:', error);
-        // setMessages(prev => prev.filter(msg => msg.id !== tempId));
-      }
-    } finally {
-      setAbortController(null);
-      // setMessages(prev => prev.map(msg => {
-      //   if (msg.id === tempId) {
-      //     return { ...msg, isStreaming: false };
-      //   }
-      //   return msg;
-      // }));
-    }
+  // 用户点击发送时
+  const handleSend = () => {
+    handleSendMessage(newMessage, false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -842,6 +652,45 @@ const ConversationContent = ({
       }
     ]
 
+  // 步骤名称
+  const stepNames = ["问题解析", "新建布局", "新建画布", "新建功能按钮", "代码导出"];
+
+  // 定时检查reasoning更新时间，超时则启动模拟
+  useEffect(() => {
+    if (simulated && reasoning) return;
+    const interval = setInterval(() => {
+      console.log(!simulated && reasoning && Date.now() - lastReasoningUpdateRef.current > 10000);
+      
+      if (!simulated && reasoning && Date.now() - lastReasoningUpdateRef.current > 10000) {
+        setSimulated(true);
+        setStepStatus([false, false, false, false, false]);
+        let stepIndex = 0;
+        stepTimerRef.current = setInterval(() => {
+          setStepStatus(prev => {
+            const next = [...prev];
+            if (stepIndex < next.length) {
+              next[stepIndex] = true;
+              stepIndex++;
+              // 如果刚完成第4步（新建功能按钮），则10分钟后再完成第5步
+              if (stepIndex === 4 && stepTimerRef.current) {
+                clearInterval(stepTimerRef.current);
+                stepTimerRef.current = null;
+                setTimeout(() => {
+                  setStepStatus(prev2 => {
+                    const next2 = [...prev2];
+                    next2[4] = true;
+                    return next2;
+                  });
+                }, 600000); // 10分钟
+              }
+            }
+            return next;
+          });
+        }, 20000);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [reasoning, simulated]);
 
 
   return (
@@ -927,6 +776,26 @@ const ConversationContent = ({
                         )}
 
                         {/* HTML内容渲染或源码显示*/}
+                        {/* {!message.htmlContent && message.isStreaming && message.reasoning ? (
+                          <div className="flex items-center whitespace-pre-wrap break-words">
+                            <Loader2 className="w-4 h-4 animate-spin m-0.5" />
+                            <span className="ml-1">问题解析中...</span>
+                          </div>
+                        ) : ('')} */}
+                        {!message.htmlContent && message.isStreaming && message.reasoning ? (
+                          <>
+                            {stepNames.map((name, idx) => (
+                              <div className="flex items-center whitespace-pre-wrap break-words" key={name}>
+                                {stepStatus[idx] ? (
+                                  <Check className="w-4 h-4 text-green-500 m-0.5" />
+                                ) : (
+                                  <Loader2 className="w-4 h-4 animate-spin m-0.5" />
+                                )}
+                                <span className="ml-1">{name}</span>
+                              </div>
+                            ))}
+                          </>
+                        ) : ('')}
                         {message.htmlContent && message.type === "assistant" && (
                           <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 
@@ -966,7 +835,7 @@ const ConversationContent = ({
                           </div>
                         )}
 
-                        <div className="markdown-content whitespace-pre-wrap break-words">
+                        <div className="markdown-content break-words">
                           <ReactMarkdown
                             remarkPlugins={[remarkMath, remarkGfm]}
                             rehypePlugins={[rehypeKatex]}

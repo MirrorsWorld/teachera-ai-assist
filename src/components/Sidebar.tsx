@@ -17,7 +17,7 @@ const Sidebar = ({
   onFavoriteConversation 
 }: SidebarProps) => {
 
-  const conversationsList =  useRef(null)
+  const conversationsList = useRef(null)
   const handleNewChat = async () => {
     const newConv = await createConversation({
       title: '新对话',
@@ -34,8 +34,8 @@ const Sidebar = ({
     conversationsList.current.fetchData()
   }
   return (
-    <aside className="w-full h-full bg-white p-6 flex flex-col">
-      <div className="flex flex-col gap-5 pb-5 border-b border-gray-200">
+    <aside className="w-full h-full bg-white flex flex-col">
+      <div className="flex flex-col gap-5 p-5 border-b border-gray-200">
         {/* <div className="text-lg font-semibold text-primary flex items-center gap-2.5">
           <div className="w-5 h-5 bg-primary rounded-sm flex items-center justify-center">
             <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -44,7 +44,7 @@ const Sidebar = ({
         </div> */}
         <button 
           onClick={handleNewChat}
-          className="bg-gradient-to-r from-primary to-accent text-white border-none px-5 py-2.5 rounded-xl font-medium cursor-pointer transition-all duration-300 flex items-center gap-2 shadow-[0_4px_12px_rgba(67,97,238,0.3)] hover:transform hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(67,97,238,0.4)] flex items-center justify-center gap-2 text-base"
+          className="bg-primary text-white border-none px-5 py-2.5 rounded-md font-medium cursor-pointer transition-all duration-300 hover:transform hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(67,97,238,0.4)] flex items-center justify-center gap-2 text-base"
         >
           <Plus className="w-5 h-5" />
           <span>发起新对话</span>

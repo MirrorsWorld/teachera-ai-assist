@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Copy, Code, Eye, X } from "lucide-react";
+import { Copy, Code, Eye, X, Download, CopyPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import useHtmlStore from '@/store/store';
 
@@ -19,7 +19,7 @@ const HtmlContent = ({ onClose }: HtmlContentProps) => {
   return (
     <div className="flex flex-col h-full">
       {/* 头部工具栏 - 添加关闭按钮 */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+      <div className="flex items-center justify-between p-4 border-gray-200">
         <span className="text-sm font-medium text-gray-600">生成内容:</span>
         <div className="flex gap-1">
           <button
@@ -52,16 +52,7 @@ const HtmlContent = ({ onClose }: HtmlContentProps) => {
             className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
             title="下载 HTML 文件"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v6m0 0l-3-3m3 3l3-3M12 4v8" />
-            </svg>
+            <Download className="w-4 h-4" />
           </button>
           <button
             onClick={() => {
@@ -75,23 +66,14 @@ const HtmlContent = ({ onClose }: HtmlContentProps) => {
             className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-blue-700"
             title="在新窗口打开"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14 3h7v7m0 0L10 21l-7-7L21 10z" />
-            </svg>
+            <CopyPlus className="w-4 h-4" />
           </button>
 
           {/* 新增关闭按钮 */}
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1 rounded hover:bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600"
+              className="p-1 rounded hover:bg-red-100 text-gray-500 hover:text-red-600"
               title="关闭预览"
             >
               <X className="w-4 h-4" />
@@ -100,7 +82,7 @@ const HtmlContent = ({ onClose }: HtmlContentProps) => {
         </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-hidden">
+      <div className="flex-1 p-4 overflow-hidden pt-0">
         {!htmlCode ? (
           <div className="flex items-center justify-center h-full text-gray-500">
             <div className="text-center">
