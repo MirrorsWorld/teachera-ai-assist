@@ -157,7 +157,7 @@ const Login = () => {
               />
             </div>
 
-            {!isLogin && (
+            {/* {!isLogin && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   邀请码
@@ -171,7 +171,7 @@ const Login = () => {
                   required
                 />
               </div>
-            )}
+            )} */}
 
             {isLogin && (
               <div className="flex items-center justify-between text-sm">

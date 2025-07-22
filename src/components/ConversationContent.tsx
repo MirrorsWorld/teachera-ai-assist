@@ -1,6 +1,6 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Heart, Trash2, MoreVertical, Send, ImageIcon, Code, Eye, Loader2, Paperclip, Check } from "lucide-react"
+import { Heart, Trash2, MoreVertical, Send, Ellipsis, Code, Eye, Loader2, Paperclip, Check } from "lucide-react"
 import { ConversationContentProps, MessageData } from "../api/chat"
 import { ScrollArea } from "./ui/scroll-area"
 import ReactMarkdown from "react-markdown"
@@ -354,7 +354,7 @@ const ConversationContent = ({
   const [showHtmlSource, setShowHtmlSource] = useState<{ [key: number]: boolean }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [enableDeepThinking, setEnableDeepThinking] = useState(true);
-  const [stepStatus, setStepStatus] = useState([false, false, false, false, false]); // 5步任务完成状态
+  const [stepStatus, setStepStatus] = useState<(boolean | 'loading')[]>([false, false, false, false, false]); // 5步任务完成状态
   const stepTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastReasoningUpdateRef = useRef<number>(Date.now());
   const [simulated, setSimulated] = useState(false);
@@ -466,7 +466,57 @@ const ConversationContent = ({
       let buffer = '';
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // 处理最后可能剩余的 buffer 数据
+          if (buffer) {
+            const lines = buffer.split('\n');
+            buffer = '';
+            const localReasoning = reasoning;
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const jsonStr = line.slice(6).trim();
+              if (!jsonStr) continue;
+              try {
+                const { data } = JSON.parse(jsonStr);
+                if (data.type === 'reasoning') {
+                  reasoning += data.content;
+                  setReasoning(localReasoning);
+                  lastReasoningUpdateRef.current = Date.now();
+                  setMessages(prev =>
+                    prev.map(msg =>
+                      msg.id === assistantId
+                        ? { ...msg, reasoning: localReasoning }
+                        : msg
+                    )
+                  );
+                }
+                if (data.type === 'html_code') {
+                  htmlContent += data.content;
+                  setMessages(prev =>
+                    prev.map(msg =>
+                      msg.id === assistantId
+                        ? { ...msg, htmlContent: htmlContent }
+                        : msg
+                    )
+                  );
+                }
+                if (data.type === 'result') {
+                  answer += data.content;
+                  setMessages(prev =>
+                    prev.map(msg =>
+                      msg.id === assistantId
+                        ? { ...msg, answer: answer }
+                        : msg
+                    )
+                  );
+                }
+              } catch (error) {
+                console.error('Error parsing line:', error, line);
+              }
+            }
+          }
+          break;
+        }
         const chunk = decoder.decode(value);
         buffer += chunk;
         const lines = buffer.split('\n');
@@ -657,9 +707,9 @@ const ConversationContent = ({
 
   // 定时检查reasoning更新时间，超时则启动模拟
   useEffect(() => {
-    if (simulated && reasoning) return;
+    if (simulated && !reasoning) return;
     const interval = setInterval(() => {
-      console.log(!simulated && reasoning && Date.now() - lastReasoningUpdateRef.current > 10000);
+      console.log(!simulated && reasoning && Date.now() - lastReasoningUpdateRef.current > 15000);
       
       if (!simulated && reasoning && Date.now() - lastReasoningUpdateRef.current > 10000) {
         setSimulated(true);
@@ -669,8 +719,16 @@ const ConversationContent = ({
           setStepStatus(prev => {
             const next = [...prev];
             if (stepIndex < next.length) {
-              next[stepIndex] = true;
+              // 先将当前步骤设为 loading
+              next[stepIndex] = 'loading';
+              
+              // 如果上一步存在且是 loading，则设为完成
+              if (stepIndex > 0 && next[stepIndex - 1] === 'loading') {
+                next[stepIndex - 1] = true;
+              }
+              
               stepIndex++;
+              
               // 如果刚完成第4步（新建功能按钮），则10分钟后再完成第5步
               if (stepIndex === 4 && stepTimerRef.current) {
                 clearInterval(stepTimerRef.current);
@@ -678,10 +736,18 @@ const ConversationContent = ({
                 setTimeout(() => {
                   setStepStatus(prev2 => {
                     const next2 = [...prev2];
-                    next2[4] = true;
+                    next2[3] = true; // 完成第4步
+                    next2[4] = 'loading'; // 开始第5步
                     return next2;
                   });
-                }, 600000); // 10分钟
+                  setTimeout(() => {
+                    setStepStatus(prev3 => {
+                      const next3 = [...prev3];
+                      next3[4] = true; // 完成第5步
+                      return next3;
+                    });
+                  }, 600000); // 10分钟后完成第5步
+                }, 20000);
               }
             }
             return next;
@@ -786,10 +852,12 @@ const ConversationContent = ({
                           <>
                             {stepNames.map((name, idx) => (
                               <div className="flex items-center whitespace-pre-wrap break-words" key={name}>
-                                {stepStatus[idx] ? (
+                                {stepStatus[idx] === true ? (
                                   <Check className="w-4 h-4 text-green-500 m-0.5" />
-                                ) : (
+                                ) : stepStatus[idx] === 'loading' ? (
                                   <Loader2 className="w-4 h-4 animate-spin m-0.5" />
+                                ) : (
+                                  <Ellipsis className="w-4 h-4 animate-pulse m-0.5" />
                                 )}
                                 <span className="ml-1">{name}</span>
                               </div>
