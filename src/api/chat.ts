@@ -19,7 +19,7 @@ export interface MessageData {
   htmlContent?: string;
   isStreaming?: boolean;
   timestamp: string;
-  image?: string;
+  imageUrl?: string;
   // chunks?: string[];
   durationInSeconds?: number // 新增：思考耗时（秒），可选字段
 }
@@ -79,4 +79,9 @@ export function updateMessage(id: number, data: Partial<Message>) {
 // 删除消息
 export function deleteMessage(id: number) {
   return del(`/api/chat/${id}`)
+}
+
+// 上传图片(formData格式)
+export function uploadImage(data: FormData) {
+  return post('/api/upload', data, { headers: { 'Content-Type': 'multipart/form-data' } })
 }

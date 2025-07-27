@@ -1,7 +1,7 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Heart, Trash2, MoreVertical, Send, Ellipsis, Code, Eye, Loader2, Paperclip, Check } from "lucide-react"
-import { ConversationContentProps, MessageData } from "../api/chat"
+import { ConversationContentProps, MessageData, uploadImage } from "../api/chat"
 import { ScrollArea } from "./ui/scroll-area"
 import ReactMarkdown from "react-markdown"
 import remarkMath from "remark-math"
@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm"
 import useHtmlStore from "@/store/store"
 import { ReasoningBlock } from "./ui/reasoning-block"
 import FileModal from "./ui/file-modal"
+import { log } from "console"
 
 
 // 扩展 ConversationContentProps 接口
@@ -354,11 +355,7 @@ const ConversationContent = ({
   const [showHtmlSource, setShowHtmlSource] = useState<{ [key: number]: boolean }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [enableDeepThinking, setEnableDeepThinking] = useState(true);
-  const [stepStatus, setStepStatus] = useState<(boolean | 'loading')[]>([false, false, false, false, false]); // 5步任务完成状态
-  const stepTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastReasoningUpdateRef = useRef<number>(Date.now());
-  const [simulated, setSimulated] = useState(false);
-  const [reasoning, setReasoning] = useState('');
 
   // 在现有的 useRef 声明后添加
   const prevHtmlContentRef = useRef<string>("")
@@ -421,7 +418,7 @@ const ConversationContent = ({
       type: 'user',
       answer: message,
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      ...(isInitial ? {} : { image: selectedImage })
+      ...(isInitial ? {} : { imageUrl: selectedImage })
     }]);
 
     if (!isInitial) {
@@ -433,19 +430,23 @@ const ConversationContent = ({
       const controller = new AbortController();
       setAbortController(controller);
       const startTime = Date.now();
+      const bodyData: any = {
+        conversation_id: conversationId,
+        message: message,
+        message_order: 1,
+        user_id: 1,
+        title: title,
+      };
+      if (selectedImage && !isInitial) {
+        bodyData.imageUrl = selectedImage;
+      }
       const response = await fetch('/api/v2/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          message: message,
-          message_order: 1,
-          user_id: 1,
-          title: title,
-        }),
+        body: JSON.stringify(bodyData),
         signal: controller.signal
       });
       const assistantId = Date.now();
@@ -480,7 +481,6 @@ const ConversationContent = ({
                 const { data } = JSON.parse(jsonStr);
                 if (data.type === 'reasoning') {
                   reasoning += data.content;
-                  setReasoning(localReasoning);
                   lastReasoningUpdateRef.current = Date.now();
                   setMessages(prev =>
                     prev.map(msg =>
@@ -530,7 +530,6 @@ const ConversationContent = ({
             const { data } = JSON.parse(jsonStr);
             if (data.type === 'reasoning') {
               reasoning += data.content;
-              setReasoning(localReasoning);
               lastReasoningUpdateRef.current = Date.now();
               setMessages(prev =>
                 prev.map(msg =>
@@ -571,6 +570,7 @@ const ConversationContent = ({
           msg.id === assistantId ? { ...msg, isStreaming: false, durationInSeconds } : msg
         )
       );
+      setSelectedImage(null);
       handleReset(htmlContent);
       if (isInitial && onInitialMessageSent) {
         onInitialMessageSent();
@@ -581,17 +581,6 @@ const ConversationContent = ({
       }
     } finally {
       setAbortController(null);
-      if (stepTimerRef.current) {
-        clearInterval(stepTimerRef.current);
-        stepTimerRef.current = null;
-      }
-      setSimulated(false);
-      setStepStatus(prev => {
-        if (prev.slice(0, 4).every(Boolean) && !prev[4]) {
-          return [true, true, true, true, true];
-        }
-        return prev;
-      });
     }
   };
 
@@ -629,14 +618,26 @@ const ConversationContent = ({
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log('file', file);
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const res = await uploadImage(formData);
+        let imageUrl = '';
+        if (res?.data?.imageUrl) {
+          imageUrl = res.data.imageUrl;
+        }
+        if (imageUrl) {
+          setSelectedImage(imageUrl);
+        } else {
+          alert('图片上传失败，未获取到图片路径');
+        }
+      } catch (err) {
+        alert('图片上传失败');
+      }
     }
   };
 
@@ -705,60 +706,6 @@ const ConversationContent = ({
   // 步骤名称
   const stepNames = ["问题解析", "新建布局", "新建画布", "新建功能按钮", "代码导出"];
 
-  // 定时检查reasoning更新时间，超时则启动模拟
-  useEffect(() => {
-    if (simulated && !reasoning) return;
-    const interval = setInterval(() => {
-      console.log(!simulated && reasoning && Date.now() - lastReasoningUpdateRef.current > 15000);
-      
-      if (!simulated && reasoning && Date.now() - lastReasoningUpdateRef.current > 10000) {
-        setSimulated(true);
-        setStepStatus([false, false, false, false, false]);
-        let stepIndex = 0;
-        stepTimerRef.current = setInterval(() => {
-          setStepStatus(prev => {
-            const next = [...prev];
-            if (stepIndex < next.length) {
-              // 先将当前步骤设为 loading
-              next[stepIndex] = 'loading';
-              
-              // 如果上一步存在且是 loading，则设为完成
-              if (stepIndex > 0 && next[stepIndex - 1] === 'loading') {
-                next[stepIndex - 1] = true;
-              }
-              
-              stepIndex++;
-              
-              // 如果刚完成第4步（新建功能按钮），则10分钟后再完成第5步
-              if (stepIndex === 4 && stepTimerRef.current) {
-                clearInterval(stepTimerRef.current);
-                stepTimerRef.current = null;
-                setTimeout(() => {
-                  setStepStatus(prev2 => {
-                    const next2 = [...prev2];
-                    next2[3] = true; // 完成第4步
-                    next2[4] = 'loading'; // 开始第5步
-                    return next2;
-                  });
-                  setTimeout(() => {
-                    setStepStatus(prev3 => {
-                      const next3 = [...prev3];
-                      next3[4] = true; // 完成第5步
-                      return next3;
-                    });
-                  }, 600000); // 10分钟后完成第5步
-                }, 20000);
-              }
-            }
-            return next;
-          });
-        }, 20000);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [reasoning, simulated]);
-
-
   return (
     <div className="flex flex-col h-full">
       {/* 对话标题和操作按钮 */}
@@ -809,9 +756,9 @@ const ConversationContent = ({
                 {message.type === 'user' ? (
                   <div className="max-w-[80%]">
                     {/* 用户上传的图片 */}
-                    {message.image && (
+                    {message.imageUrl && (
                       <img
-                        src={message.image}
+                        src={message.imageUrl}
                         alt="上传的图片"
                         className="max-w-full h-auto rounded-lg mb-2"
                       />
@@ -842,27 +789,11 @@ const ConversationContent = ({
                         )}
 
                         {/* HTML内容渲染或源码显示*/}
-                        {/* {!message.htmlContent && message.isStreaming && message.reasoning ? (
+                        {!message.htmlContent && message.isStreaming && message.reasoning ? (
                           <div className="flex items-center whitespace-pre-wrap break-words">
                             <Loader2 className="w-4 h-4 animate-spin m-0.5" />
                             <span className="ml-1">问题解析中...</span>
                           </div>
-                        ) : ('')} */}
-                        {!message.htmlContent && message.isStreaming && message.reasoning ? (
-                          <>
-                            {stepNames.map((name, idx) => (
-                              <div className="flex items-center whitespace-pre-wrap break-words" key={name}>
-                                {stepStatus[idx] === true ? (
-                                  <Check className="w-4 h-4 text-green-500 m-0.5" />
-                                ) : stepStatus[idx] === 'loading' ? (
-                                  <Loader2 className="w-4 h-4 animate-spin m-0.5" />
-                                ) : (
-                                  <Ellipsis className="w-4 h-4 animate-pulse m-0.5" />
-                                )}
-                                <span className="ml-1">{name}</span>
-                              </div>
-                            ))}
-                          </>
                         ) : ('')}
                         {message.htmlContent && message.type === "assistant" && (
                           <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
