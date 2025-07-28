@@ -34,11 +34,11 @@ const MainContent = ({
 
   const handleUpload = () => {
     console.log("打开上传试题界面");
-    if (fileInputRef.current) {
-      fileInputRef.current.click()
-    } else {
-      console.error("文件输入框引用不存在")
-    }
+    // if (fileInputRef.current) {
+    //   fileInputRef.current.click()
+    // } else {
+    //   console.error("文件输入框引用不存在")
+    // }
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {

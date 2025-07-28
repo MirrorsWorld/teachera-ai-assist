@@ -29,6 +29,7 @@ const test_data: MessageData[] = [
     id: 1,
     type: 'user',
     answer: '请帮我讲解二次函数的基本性质',
+    imageUrl: 'https://elsp-homepage.oss-cn-hongkong.aliyuncs.com/conference/1869198440085524480/conference_img/1900063852563570688.png',
     timestamp: '14:30'
   },
   {
@@ -384,7 +385,7 @@ const ConversationContent = ({
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
@@ -430,12 +431,13 @@ const ConversationContent = ({
       const controller = new AbortController();
       setAbortController(controller);
       const startTime = Date.now();
-      const bodyData: any = {
+      const bodyData = {
         conversation_id: conversationId,
         message: message,
         message_order: 1,
         user_id: 1,
         title: title,
+        imageUrl: null
       };
       if (selectedImage && !isInitial) {
         bodyData.imageUrl = selectedImage;
@@ -571,6 +573,7 @@ const ConversationContent = ({
         )
       );
       setSelectedImage(null);
+      fileInputRef.current.value = '';
       handleReset(htmlContent);
       if (isInitial && onInitialMessageSent) {
         onInitialMessageSent();
@@ -850,7 +853,7 @@ const ConversationContent = ({
                               code: ({ node, className, children, ...props }) => {
                                 return (
                                   <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
-                                    <code className="block p-2 text-sm text-black-100" {...props}>
+                                    <code className="block p-2 text-sm text-black-100 w-[500px]" {...props}>
                                       {children}
                                     </code>
                                   </div>
@@ -963,7 +966,7 @@ const ConversationContent = ({
               ) : (
                 <button
                   onClick={handleSend}
-                  disabled={!newMessage.trim() && !selectedImage}
+                  disabled={!newMessage.trim() || !selectedImage}
                   className="bg-primary text-white p-2.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   <Send className="w-4 h-4" />
