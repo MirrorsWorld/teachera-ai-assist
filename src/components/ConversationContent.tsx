@@ -1,7 +1,7 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Heart, Trash2, MoreVertical, Send, Ellipsis, Code, Eye, Loader2, Paperclip, Check } from "lucide-react"
-import { ConversationContentProps, MessageData, uploadImage } from "../api/chat"
+import { ConversationContentProps, MessageData, uploadImage, getMessageList } from "../api/chat"
 import { ScrollArea } from "./ui/scroll-area"
 import ReactMarkdown from "react-markdown"
 import remarkMath from "remark-math"
@@ -389,23 +389,23 @@ const ConversationContent = ({
   }, [messages]);
 
   useEffect(() => {
-    // const fetchData = async () => {
-    //   if (!conversationId) return;
-    //   setMessages([])
-    //   try {
-    //     var data = await getMessageList(conversationId)
-    //     console.info('获取会话消息列表:', data)
-    //     if (!data) {
-    //       data = []
-    //     }
-    //     setMessages(data)
-    //   } catch (error) {
-    //     console.error('获取会话消息列表失败:', error)
-    //   } finally {
-    //     // setLoading(false)
-    //   }
-    // }
-    // fetchData()
+    const fetchData = async () => {
+      if (!conversationId) return;
+      setMessages([])
+      // try {
+      //   var data = await getMessageList(conversationId)
+      //   console.info('获取会话消息列表:', data)
+      //   if (!data) {
+      //     data = []
+      //   }
+      //   setMessages(data)
+      // } catch (error) {
+      //   console.error('获取会话消息列表失败:', error)
+      // } finally {
+      //   setLoading(false)
+      // }
+    }
+    fetchData()
   }, [conversationId])
 
   // 合并后的统一消息发送函数
@@ -966,7 +966,7 @@ const ConversationContent = ({
               ) : (
                 <button
                   onClick={handleSend}
-                  disabled={!newMessage.trim() || !selectedImage}
+                  disabled={!newMessage.trim() && !selectedImage}
                   className="bg-primary text-white p-2.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   <Send className="w-4 h-4" />
