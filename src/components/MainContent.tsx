@@ -115,10 +115,12 @@ const MainContent = ({
 
   const handleKnowledge = () => {
     console.log("打开知识点选择界面");
+    alert("功能开发中，敬请期待...")
   };
 
   const handleMistakes = () => {
     console.log("打开高频错题选择界面");
+    alert("功能开发中，敬请期待...")
   };
 
 
