@@ -62,7 +62,7 @@ export function ReasoningBlock({ reasoning, isStreaming, durationInSeconds }: Re
             code: ({ node, className, children, ...props }) => {
               return (
                 <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
-                  <code className="block p-2 text-sm text-black-100 w-[500px]" {...props}>
+                  <code className="block p-2 text-sm text-black-100 w-[400px]" {...props}>
                     {children}
                   </code>
                 </div>

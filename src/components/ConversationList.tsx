@@ -19,10 +19,7 @@ const ConversationList = forwardRef(({
   useImperativeHandle(ref, () => ({
     fetchData
   }))
-  const conversationData = [
-    { id: 1, title: '对话标题', subject: '666', date: '2023-07-01', time: '12:00', active: true },
-    { id: 2, title: '对话标题', subject: '666', date: '2023-07-02', time: '14:00', active: false },
-  ]
+  const conversationData = []
 
   const [conversations, setConversations] = useState<ConversationData[]>(conversationData)
   const [loading, setLoading] = useState(true)
@@ -40,6 +37,7 @@ const ConversationList = forwardRef(({
       setLoading(false)
     }
   }
+
   useEffect(() => {
     fetchData()
   }, [])

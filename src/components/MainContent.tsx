@@ -3,19 +3,20 @@ import WelcomeSection from "./WelcomeSection";
 import MessageInput from "./MessageInput";
 import ActionButtons from "./ActionButtons";
 import { ConversationData, createConversation } from "@/api/conversation";
+import { uploadImage } from "@/api/chat";
 import { X, Upload, Play } from "lucide-react"
 
 
 interface MainContentProps {
   activeTitle?: string;
-  onNewConversation:(newConv: ConversationData, initialMessage?: string) => void;
+  onNewConversation:(newConv: ConversationData, uploadedImage?: string, initialMessage?: string) => void;
 }
 
 const MainContent = ({ 
   activeTitle = "我是你的AI教师助理TeacherA，可以帮你备课",
   onNewConversation
 }: MainContentProps) => {
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState("")
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [uploadedFileName, setUploadedFileName] = useState<string>("")
   const fileInputRef = useRef<HTMLInputElement>(null) 
@@ -34,11 +35,11 @@ const MainContent = ({
 
   const handleUpload = () => {
     console.log("打开上传试题界面");
-    // if (fileInputRef.current) {
-    //   fileInputRef.current.click()
-    // } else {
-    //   console.error("文件输入框引用不存在")
-    // }
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    } else {
+      console.error("文件输入框引用不存在")
+    }
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,14 +58,25 @@ const MainContent = ({
         alert("文件大小不能超过10MB")
         return
       }
+    }
 
-      // 创建图片预览
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setUploadedImage(e.target?.result as string)
-        setUploadedFileName(file.name)
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const res = await uploadImage(formData);
+        let imageUrl = '';
+        if (res?.data?.imageUrl) {
+          imageUrl = res.data.imageUrl;
+        }
+        if (imageUrl) {
+          setUploadedImage(imageUrl);
+        } else {
+          alert('图片上传失败，未获取到图片路径');
+        }
+      } catch (err) {
+        alert('图片上传失败');
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -84,8 +96,8 @@ const MainContent = ({
         title: `试题分析: ${uploadedFileName}`,
       })
       // 传递图片分析请求作为初始消息
-      const analysisMessage = `请帮我分析这张图片中的试题内容：${uploadedFileName}`;
-      onNewConversation(newConv, analysisMessage)
+      const analysisMessage = `请帮我分析这张图片中的试题内容`;
+      onNewConversation(newConv, analysisMessage, uploadedImage)
       // 清空预览状态
       setUploadedImage(null)
       setUploadedFileName("")

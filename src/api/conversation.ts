@@ -56,6 +56,7 @@ export function createConversation(data: { title: string }) {
   }));
 }
 
+// 获取单个会话
 export function getConversation(id: number) {
   return get(`/api/conversations/${id}`).then(res => ({
     id: res.data.id,

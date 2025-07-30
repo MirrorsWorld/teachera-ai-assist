@@ -1,15 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import Header from "../components/Header"
 import Sidebar from "../components/Sidebar"
 import MainContent from "../components/MainContent"
 import ConversationContent from "../components/ConversationContent"
 import HtmlContent from "../components/HtmlContent"
-import { type ConversationData, getConversation } from "@/api/conversation"
+import { type ConversationData, getConversation, getConversationList } from "@/api/conversation"
 import { toast } from "@/hooks/use-toast"
 import useHtmlStore from "@/store/store" // 保留您的原有store
-
 export type ViewMode = "welcome" | "conversation"
 
 const Index = () => {
@@ -19,6 +18,13 @@ const Index = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null)
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null)
   const [initialMessage, setInitialMessage] = useState<string>("")
+  const [initialImgurl, setInitialImgurl] = useState<string>("")
+  interface ConversationListRef {
+    fetchData: () => Promise<void>;
+  }
+
+  const conversationListRef = useRef<ConversationListRef>(null);
+  
 
   // 从您的原有store获取HTML内容
   const { htmlCode } = useHtmlStore()
@@ -40,17 +46,24 @@ const Index = () => {
     setShowHtmlPanel(!showHtmlPanel)
   }
 
-  const handleNewChat = async (newConv: ConversationData, initialMsg?: string) => {
+  const handleNewChat = async (newConv: ConversationData, initialMsg?: string, initialImgurl?: string) => {
+    console.log("图片地址", initialImgurl);
+
     try {
       setActiveTitle(newConv.title)
       setViewMode("conversation")
       setSelectedConversationId(newConv.id)
       const selectedConversation = await getConversation(newConv.id)
+      conversationListRef.current.fetchData();
       setSelectedConversation(selectedConversation)
       
       // 保存初始消息，用于自动发送
       if (initialMsg) {
         setInitialMessage(initialMsg)
+      }
+
+      if (initialImgurl) {
+        setInitialImgurl(initialImgurl)
       }
       
       toast({ title: "对话创建成功", description: "已准备就绪" })
@@ -96,8 +109,9 @@ const Index = () => {
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* 左侧边栏 固定宽度，独立滚动*/}
         {isLoggedIn && (
-          <div className="w-80 bg-slate-100 border-r border-gray-200 flex-shrink-0 flex flex-col">
+          <div className="w-64 bg-slate-100 border-r border-gray-200 flex-shrink-0 flex flex-col">
             <Sidebar
+              conversationsList={conversationListRef}
               onNewChat={handleNewChat}
               onConversationClick={handleConversationClick}
               onDeleteConversation={handleDeleteConversation}
@@ -123,6 +137,7 @@ const Index = () => {
                 onToggleHtmlPanel={toggleHtmlPanel}
                 initialMessage={initialMessage}
                 onInitialMessageSent={handleInitialMessageSent}
+                initialImgurl={initialImgurl}
               />
             )
           )}

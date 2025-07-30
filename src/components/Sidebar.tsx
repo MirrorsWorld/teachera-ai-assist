@@ -8,16 +8,16 @@ interface SidebarProps {
   onConversationClick: (conversation: ConversationData) => void;
   onDeleteConversation: (id: number) => void;
   onFavoriteConversation: (id: number) => void;
+  conversationsList
 }
 
 const Sidebar = ({  
   onNewChat, 
   onConversationClick, 
   onDeleteConversation, 
-  onFavoriteConversation 
+  onFavoriteConversation,
+  conversationsList
 }: SidebarProps) => {
-
-  const conversationsList = useRef(null)
   const handleNewChat = async () => {
     const newConv = await createConversation({
       title: '新对话',

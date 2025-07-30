@@ -12,16 +12,16 @@ import { ReasoningBlock } from "./ui/reasoning-block"
 import FileModal from "./ui/file-modal"
 import { log } from "console"
 
-
 // 扩展 ConversationContentProps 接口
-interface ExtendedConversationContentProps extends ConversationContentProps {
-  onHtmlContentUpdate?: (content: string) => void
-  hasHtmlContent?: boolean
-  showHtmlPreview?: boolean
-  onToggleHtmlPreview?: () => void
-  initialMessage?: string
-  onInitialMessageSent?: () => void
-}
+// interface ExtendedConversationContentProps extends ConversationContentProps {
+//   onHtmlContentUpdate?: (content: string) => void
+//   hasHtmlContent?: boolean
+//   showHtmlPreview?: boolean
+//   onToggleHtmlPreview?: () => void
+//   initialMessage?: string
+//   initialImgurl?: string
+//   onInitialMessageSent?: () => void
+// }
 
 
 const test_data: MessageData[] = [
@@ -346,8 +346,8 @@ const ConversationContent = ({
   isFavorited,
   onToggleHtmlPanel, // 新增的prop
   initialMessage,
+  initialImgurl,
   onInitialMessageSent,
-
 }: ConversationContentProps) => {
   const [showActions, setShowActions] = useState(false);
   const [newMessage, setNewMessage] = useState("");
@@ -409,9 +409,9 @@ const ConversationContent = ({
   }, [conversationId])
 
   // 合并后的统一消息发送函数
-  const handleSendMessage = async (message: string, isInitial = false) => {
+  const handleSendMessage = async (message: string, initImageUrl: string, isInitial = false) => {
     if (!message.trim() || !conversationId) return;
-
+    
     // 创建临时用户消息
     const tempId = Date.now();
     setMessages(prev => [...prev, {
@@ -419,7 +419,7 @@ const ConversationContent = ({
       type: 'user',
       answer: message,
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      ...(isInitial ? {} : { imageUrl: selectedImage })
+      ...(isInitial ? { imageUrl: initImageUrl } : { imageUrl: selectedImage })
     }]);
 
     if (!isInitial) {
@@ -442,6 +442,11 @@ const ConversationContent = ({
       if (selectedImage && !isInitial) {
         bodyData.imageUrl = selectedImage;
       }
+
+      if (isInitial && initImageUrl) {
+        bodyData.imageUrl = initImageUrl;
+      }
+
       const response = await fetch('/api/v2/chat', {
         method: 'POST',
         headers: {
@@ -590,7 +595,7 @@ const ConversationContent = ({
   // 页面加载时自动发送初始消息
   useEffect(() => {
     if (initialMessage && conversationId) {
-      handleSendMessage(initialMessage, true);
+      handleSendMessage(initialMessage, initialImgurl , true);
     }
   }, [initialMessage, conversationId]);
 
@@ -611,7 +616,7 @@ const ConversationContent = ({
 
   // 用户点击发送时
   const handleSend = () => {
-    handleSendMessage(newMessage, false);
+    handleSendMessage(newMessage, initialImgurl , false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -853,7 +858,7 @@ const ConversationContent = ({
                               code: ({ node, className, children, ...props }) => {
                                 return (
                                   <div className="bg-gray-100 dark:bg-gray-900 rounded-md my-1 overflow-x-auto">
-                                    <code className="block p-2 text-sm text-black-100 w-[500px]" {...props}>
+                                    <code className="block p-2 text-sm text-black-100 w-[400px]" {...props}>
                                       {children}
                                     </code>
                                   </div>
