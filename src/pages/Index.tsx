@@ -6,7 +6,7 @@ import Sidebar from "../components/Sidebar"
 import MainContent from "../components/MainContent"
 import ConversationContent from "../components/ConversationContent"
 import HtmlContent from "../components/HtmlContent"
-import { type ConversationData, getConversation, getConversationList } from "@/api/conversation"
+import { type ConversationData, getConversation } from "@/api/conversation"
 import { toast } from "@/hooks/use-toast"
 import useHtmlStore from "@/store/store" // 保留您的原有store
 export type ViewMode = "welcome" | "conversation"
@@ -16,7 +16,6 @@ const Index = () => {
   const [activeTitle, setActiveTitle] = useState("我是你的AI教师助理TeacherA，可以帮你备课")
   const [viewMode, setViewMode] = useState<ViewMode>("welcome")
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null)
-  const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null)
   const [initialMessage, setInitialMessage] = useState<string>("")
   const [initialImgurl, setInitialImgurl] = useState<string>("")
   interface ConversationListRef {
@@ -27,19 +26,22 @@ const Index = () => {
   
 
   // 从您的原有store获取HTML内容
-  const { htmlCode } = useHtmlStore()
+  const { htmlCode, getLatest } = useHtmlStore()
+
+  // 获取最新的HTML内容
+  const latestHtmlCode = getLatest()
 
   // HTML 预览面板显示控制
   const [showHtmlPanel, setShowHtmlPanel] = useState<boolean>(false)
 
   // 删除这个useEffect，不要自动显示面板
   // useEffect(() => {
-  //   if (htmlCode.trim()) {
+  //   if (latestHtmlCode.trim()) {
   //     setShowHtmlPanel(true)
   //   } else {
   //     setShowHtmlPanel(false)
   //   }
-  // }, [htmlCode])
+  // }, [latestHtmlCode])
 
   // 切换 HTML 面板显示/隐藏
   const toggleHtmlPanel = () => {
@@ -50,12 +52,11 @@ const Index = () => {
     console.log("图片地址", initialImgurl);
 
     try {
-      setActiveTitle(newConv.title)
       setViewMode("conversation")
       setSelectedConversationId(newConv.id)
       const selectedConversation = await getConversation(newConv.id)
+      console.log("selectedConversation", selectedConversation);
       conversationListRef.current.fetchData();
-      setSelectedConversation(selectedConversation)
       
       // 保存初始消息，用于自动发送
       if (initialMsg) {
@@ -77,11 +78,8 @@ const Index = () => {
   }
 
   const handleConversationClick = async (conversation: ConversationData) => {
-    setActiveTitle(conversation.title)
     setViewMode("conversation")
     setSelectedConversationId(conversation.id)
-    const selectedConversation = await getConversation(conversation.id)
-    setSelectedConversation(selectedConversation)
     // 清除初始消息，因为这是点击已有对话
     setInitialMessage("")
   }
@@ -89,8 +87,6 @@ const Index = () => {
   const handleDeleteConversation = async (id: number) => {
     if (-1 !== id) {
       setSelectedConversationId(id)
-      const selectedConversation = await getConversation(id)
-      setSelectedConversation(selectedConversation)
     }
   }
 
@@ -127,13 +123,12 @@ const Index = () => {
           {viewMode === "welcome" ? (
             <MainContent activeTitle={activeTitle} onNewConversation={handleNewChat} />
           ) : (
-            selectedConversation && (
+            selectedConversationId && (
               <ConversationContent
                 conversationId={selectedConversationId}
-                title={selectedConversation.title}
                 onDelete={handleDeleteConversation}
                 onFavorite={handleFavoriteConversation}
-                isFavorited={selectedConversation.favorited || false}
+                isFavorited={false}
                 onToggleHtmlPanel={toggleHtmlPanel}
                 initialMessage={initialMessage}
                 onInitialMessageSent={handleInitialMessageSent}

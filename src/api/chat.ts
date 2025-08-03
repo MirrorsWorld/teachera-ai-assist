@@ -25,7 +25,6 @@ export interface MessageData {
 }
 export interface ConversationContentProps {
   conversationId: number;
-  title: string;
   onDelete: (id: number) => void;
   onFavorite: (id: number) => void;
   isFavorited: boolean;

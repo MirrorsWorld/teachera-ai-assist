@@ -11,12 +11,11 @@ export interface Conversation {
 
 export interface ConversationData {
   id: number;
-  title: string;
-  subject: string;
-  date: string;
-  time: string;
-  active: boolean;
-  favorited?: boolean;
+  sessionId: number;
+  message: string;
+  aiMessage: string [];
+  // active: boolean;
+  // favorited?: boolean;
 }
 
 export interface ConversationQuery {
@@ -28,12 +27,12 @@ export interface ConversationQuery {
 // 获取会话列表
 export function getConversationList(params: ConversationQuery): Promise<ConversationData[]> {
   return get('/api/conversations', params)
-    .then(res => res.data.map(item => ({
+    .then(res => res.data.conversations.map(item => ({
       id: item.id,
       title: item.title || '新对话',
       subject: item.subject || '',
-      date: item.created_at ? new Date(item.created_at).toLocaleDateString() : '',
-      time: item.created_at ? new Date(item.created_at).toLocaleDateString() : '',
+      date: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '',
+      time: item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '',
       favorited: item.favorited || false,
       active: item.active || false,
     })))
@@ -58,15 +57,7 @@ export function createConversation(data: { title: string }) {
 
 // 获取单个会话
 export function getConversation(id: number) {
-  return get(`/api/conversations/${id}`).then(res => ({
-    id: res.data.id,
-    title: res.data.title,
-    subject: res.data.subject || '新对话',
-    date: new Date(res.data.created_at).toLocaleDateString(),
-    time: new Date(res.data.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-    favorited: res.data.favorited || false,
-    active: res.data.active || true,
-  }));
+  return get(`/api/conversations/${id}`).then(res => (res.data.data));
 }
 
 

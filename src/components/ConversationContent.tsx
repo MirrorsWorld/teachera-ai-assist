@@ -1,7 +1,8 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Heart, Trash2, MoreVertical, Send, Ellipsis, Code, Eye, Loader2, Paperclip, Check } from "lucide-react"
-import { ConversationContentProps, MessageData, uploadImage, getMessageList } from "../api/chat"
+import { ConversationContentProps, MessageData, uploadImage } from "../api/chat"
+import { getConversation } from "../api/conversation"
 import { ScrollArea } from "./ui/scroll-area"
 import ReactMarkdown from "react-markdown"
 import remarkMath from "remark-math"
@@ -10,7 +11,6 @@ import remarkGfm from "remark-gfm"
 import useHtmlStore from "@/store/store"
 import { ReasoningBlock } from "./ui/reasoning-block"
 import FileModal from "./ui/file-modal"
-import { log } from "console"
 
 // 扩展 ConversationContentProps 接口
 // interface ExtendedConversationContentProps extends ConversationContentProps {
@@ -340,7 +340,6 @@ const test_data: MessageData[] = [
 
 const ConversationContent = ({
   conversationId,
-  title,
   onDelete,
   onFavorite,
   isFavorited,
@@ -362,12 +361,23 @@ const ConversationContent = ({
   const prevHtmlContentRef = useRef<string>("")
 
   // 从 store 获取状态和方法
-  const { htmlCode, reset } = useHtmlStore();
+  const { htmlCode, reset, debug, subscribe } = useHtmlStore();
+
+  // 监听store变化
+  useEffect(() => {
+    const unsubscribe = subscribe((state) => {
+      console.log('Store changed, new length:', state.htmlCode.length);
+    });
+    return unsubscribe;
+  }, [subscribe]);
 
   // 示例重置函数
   const handleReset = (val: string) => {
-    // 调用 reset 并传入新的 HTML 字符串
-    reset(val);
+    // 调用 reset 并传入新的 HTML 字符串，现在会追加到数组中
+    if (val && val.trim()) {
+      reset(val);
+      // 使用store的getState来获取最新的数组长度
+    }
   };
 
   // 模拟对话消息数据
@@ -392,21 +402,91 @@ const ConversationContent = ({
     const fetchData = async () => {
       if (!conversationId) return;
       setMessages([])
-      // try {
-      //   var data = await getMessageList(conversationId)
-      //   console.info('获取会话消息列表:', data)
-      //   if (!data) {
-      //     data = []
-      //   }
-      //   setMessages(data)
-      // } catch (error) {
-      //   console.error('获取会话消息列表失败:', error)
-      // } finally {
-      //   setLoading(false)
-      // }
+      try {
+        var data = await getConversation(conversationId)
+        if (!data || !data.message) {
+          setMessages([])
+          return
+        }
+        const convertedMessages = convertApiDataToMessages(data.message);
+        console.log("转换后的消息", convertedMessages)
+        setMessages(convertedMessages)
+      } catch (error) {
+        console.error('获取会话消息列表失败:', error)
+      } finally {
+        // setLoading(false)
+      }
     }
     fetchData()
   }, [conversationId])
+
+  // 转换函数
+const convertApiDataToMessages = (apiData: any): MessageData[] => {
+  const messages: MessageData[] = [];
+  
+  // 处理数据 - apiData是一个列表，每个元素包含message和aiMessage
+  if (apiData && Array.isArray(apiData)) {
+    apiData.forEach((item: any) => {
+      // 添加用户消息
+      if (item.message) {
+        messages.push({
+          id: item.id,
+          type: 'user',
+          answer: item.message,
+          timestamp: new Date(item.createdAt).toLocaleTimeString('zh-CN', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })
+        });
+      }
+      
+      // 处理AI回复消息
+      if (item.aiMessage && Array.isArray(item.aiMessage) && item.aiMessage.length > 0) {
+        const aiMessages = item.aiMessage;
+        
+        // 合并reasoning内容（前两条）
+        let reasoning = '';
+        if (aiMessages.length >= 2) {
+          reasoning = aiMessages[0].message + '\n\n' + aiMessages[1].message;
+        }
+        
+        // 获取answer内容（第三条）
+        let answer = '';
+        if (aiMessages.length >= 3) {
+          answer = aiMessages[2].message;
+        }
+        
+        // 获取htmlContent内容（第四条）
+        let htmlContent = '';
+        if (aiMessages.length >= 4) {
+          htmlContent = aiMessages[3].message;
+        }
+        
+        // 计算执行时间
+        const durationInSeconds = aiMessages.reduce((total: number, msg: any) => {
+          return total + (msg.execTime || 0);
+        }, 0);
+        
+        // 添加AI助手消息
+        messages.push({
+          id: aiMessages[0].id, // 使用第一条AI消息的ID
+          type: 'assistant',
+          reasoning: reasoning,
+          answer: answer,
+          htmlContent: htmlContent,
+          timestamp: new Date(aiMessages[0].createdAt).toLocaleTimeString('zh-CN', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          durationInSeconds: durationInSeconds > 0 ? Math.round(durationInSeconds / 1000) : undefined,
+          isStreaming: false
+        });
+      }
+    });
+  }
+  
+  return messages;
+};
 
   // 合并后的统一消息发送函数
   const handleSendMessage = async (message: string, initImageUrl: string, isInitial = false) => {
@@ -432,11 +512,10 @@ const ConversationContent = ({
       setAbortController(controller);
       const startTime = Date.now();
       const bodyData = {
-        conversation_id: conversationId,
+        SessionId: conversationId,
         message: message,
         message_order: 1,
         user_id: 1,
-        title: title,
         imageUrl: null
       };
       if (selectedImage && !isInitial) {
@@ -447,7 +526,7 @@ const ConversationContent = ({
         bodyData.imageUrl = initImageUrl;
       }
 
-      const response = await fetch('/api/v2/chat', {
+      const response = await fetch(`/api/v2/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -579,7 +658,6 @@ const ConversationContent = ({
       );
       setSelectedImage(null);
       fileInputRef.current.value = '';
-      handleReset(htmlContent);
       if (isInitial && onInitialMessageSent) {
         onInitialMessageSent();
       }
@@ -665,14 +743,40 @@ const ConversationContent = ({
 
   // 监听HTML内容变化，自动显示预览面板
   useEffect(() => {
-    const latestMessage = messages.filter((msg) => msg.type === "assistant" && msg.htmlContent).pop()
+    // 遍历messages数组，查找所有包含htmlContent的assistant消息
+    const assistantMessagesWithHtml = messages.filter((msg) => 
+      msg.type === "assistant" && msg.htmlContent && msg.htmlContent.trim()
+    );
+        
+    // 显示所有找到的HTML内容的ID
+    if (assistantMessagesWithHtml.length > 0) {
+      // 调用debug方法显示store的详细状态
+      debug();
+    }
+    
+    // 遍历所有找到的HTML内容，检查是否需要添加到store中
+    assistantMessagesWithHtml.forEach((message) => {
+      const htmlContent = message.htmlContent;
+      if (htmlContent && htmlContent.trim()) {
+        // 检查这个HTML内容是否已经在store中
+        const storeState = useHtmlStore.getState();
+        const isAlreadyInStore = storeState.htmlCode.some(existingHtml => 
+          existingHtml === htmlContent
+        );
+        
+        // 如果不在store中，则添加
+        if (!isAlreadyInStore) {
+          handleReset(htmlContent);
+        }
+      }
+    });
+
+    // 获取最新的HTML内容用于自动打开预览面板
+    const latestMessage = assistantMessagesWithHtml[assistantMessagesWithHtml.length - 1];
     const currentHtmlContent = latestMessage?.htmlContent || ""
 
-    // 如果有新的HTML内容生成（之前没有，现在有了）
+    // 如果有新的HTML内容生成，自动打开HTML预览面板
     if (currentHtmlContent && currentHtmlContent !== prevHtmlContentRef.current) {
-      // 更新store中的HTML内容
-      handleReset(currentHtmlContent)
-
       // 自动打开HTML预览面板
       if (onToggleHtmlPanel) {
         onToggleHtmlPanel()
@@ -718,7 +822,6 @@ const ConversationContent = ({
     <div className="flex flex-col h-full">
       {/* 对话标题和操作按钮 */}
       <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white rounded-t-xl">
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
         <div className="flex items-center gap-2">
           {/* 移除HTML预览切换按钮 */}
 
@@ -885,7 +988,7 @@ const ConversationContent = ({
       </div>
 
       {/* 输入区域 */}
-      <div className="px-6 pb-6 pt-4 max-w-4xl mx-auto w-full">
+      <div className="px-6 pb-4 pt-4 max-w-4xl mx-auto w-full">
         {selectedImage && (
           <div className="mb-4 relative inline-block">
             <img
