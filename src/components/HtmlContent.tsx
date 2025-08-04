@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Copy, Code, Eye, X, Download, CopyPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import useHtmlStore from '@/store/store';
@@ -16,12 +16,11 @@ interface HtmlContentProps {
 
 const HtmlContent = ({ onClose }: HtmlContentProps) => {
   // 从store获取状态和方法
-  const { htmlCode, reset, getLatest } = useHtmlStore()
+  const { htmlCode } = useHtmlStore()
   const [showHtmlSource, setShowHtmlSource] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState<string>("0") // 当前选中的HTML索引
 
   // 获取最新的HTML内容（数组中的最后一个元素）
-  const latestHtmlCode = getLatest()
   console.log(htmlCode);
   
   // 获取当前选中的HTML内容

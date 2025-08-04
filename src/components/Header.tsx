@@ -26,7 +26,7 @@ const Header = () => {
             className="rounded-full" 
         />
         <div className="text-xl font-bold text-white tracking-tight">
-          TeacherA
+          TeacherA.AI
         </div>
       </div>
       

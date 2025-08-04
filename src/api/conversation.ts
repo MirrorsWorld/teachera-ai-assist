@@ -5,17 +5,19 @@ export interface Conversation {
   id: number
   title: string
   creator_id: number
-  created_at: string
-  updated_at: string
+  date: string
+  time: string
+  active: boolean;
+  favorited?: boolean;
+  subject?: string;
 }
 
+// 添加具体对话内容数据接口
 export interface ConversationData {
   id: number;
   sessionId: number;
   message: string;
   aiMessage: string [];
-  // active: boolean;
-  // favorited?: boolean;
 }
 
 export interface ConversationQuery {

@@ -1,12 +1,12 @@
 
 import { Heart, Trash2 } from "lucide-react";
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
-import { ConversationData, deleteConversation, getConversationList } from '../api/conversation'
+import { Conversation, deleteConversation, getConversationList } from '../api/conversation'
 import { toast } from "@/hooks/use-toast";
 
 interface ConversationListProps {
   ref;
-  onConversationClick: (conversation: ConversationData) => void;
+  onConversationClick: (conversation: Conversation) => void;
   onDeleteConversation: (id: number) => void;
   onFavoriteConversation: (id: number) => void;
 }
@@ -19,9 +19,8 @@ const ConversationList = forwardRef(({
   useImperativeHandle(ref, () => ({
     fetchData
   }))
-  const conversationData = []
 
-  const [conversations, setConversations] = useState<ConversationData[]>(conversationData)
+  const [conversations, setConversations] = useState([])
   const [loading, setLoading] = useState(true)
   const fetchData = async () => {
     try {
@@ -81,7 +80,7 @@ const ConversationList = forwardRef(({
     e.stopPropagation();
     onFavoriteConversation(id);
   };
-  const handleConversationClick = (conversation: ConversationData) => {
+  const handleConversationClick = (conversation: Conversation) => {
     onConversationClick(conversation);
     setConversations(prev => 
       prev.map(conv => ({ 
@@ -106,7 +105,7 @@ const ConversationList = forwardRef(({
           style={{ animationDelay: `${index * 0.1}s` }}
         >
           <div className="font-medium mb-1 text-gray-900 flex items-center justify-between">
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 truncate">
               {conversation.title}
               {conversation.favorited && (
                 <Heart className="w-4 h-4 text-red-500 fill-current" />

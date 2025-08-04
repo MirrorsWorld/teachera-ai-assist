@@ -361,22 +361,13 @@ const ConversationContent = ({
   const prevHtmlContentRef = useRef<string>("")
 
   // 从 store 获取状态和方法
-  const { htmlCode, reset, debug, subscribe } = useHtmlStore();
-
-  // 监听store变化
-  useEffect(() => {
-    const unsubscribe = subscribe((state) => {
-      console.log('Store changed, new length:', state.htmlCode.length);
-    });
-    return unsubscribe;
-  }, [subscribe]);
+  const { clear, reset } = useHtmlStore();
 
   // 示例重置函数
   const handleReset = (val: string) => {
     // 调用 reset 并传入新的 HTML 字符串，现在会追加到数组中
     if (val && val.trim()) {
       reset(val);
-      // 使用store的getState来获取最新的数组长度
     }
   };
 
@@ -395,7 +386,7 @@ const ConversationContent = ({
   };
 
   useEffect(() => {
-    // scrollToBottom();
+    scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
@@ -415,6 +406,7 @@ const ConversationContent = ({
         console.error('获取会话消息列表失败:', error)
       } finally {
         // setLoading(false)
+        clear()
       }
     }
     fetchData()
@@ -734,25 +726,12 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
     }
   };
 
-  const toggleHtmlSource = (messageId: number) => {
-    setShowHtmlSource(prev => ({
-      ...prev,
-      [messageId]: !prev[messageId]
-    }));
-  };
-
   // 监听HTML内容变化，自动显示预览面板
   useEffect(() => {
     // 遍历messages数组，查找所有包含htmlContent的assistant消息
     const assistantMessagesWithHtml = messages.filter((msg) => 
       msg.type === "assistant" && msg.htmlContent && msg.htmlContent.trim()
     );
-        
-    // 显示所有找到的HTML内容的ID
-    if (assistantMessagesWithHtml.length > 0) {
-      // 调用debug方法显示store的详细状态
-      debug();
-    }
     
     // 遍历所有找到的HTML内容，检查是否需要添加到store中
     assistantMessagesWithHtml.forEach((message) => {
@@ -814,9 +793,6 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
         date: "Thursday"
       }
     ]
-
-  // 步骤名称
-  const stepNames = ["问题解析", "新建布局", "新建画布", "新建功能按钮", "代码导出"];
 
   return (
     <div className="flex flex-col h-full">

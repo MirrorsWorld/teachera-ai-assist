@@ -2,18 +2,16 @@ import { useState, useRef } from "react";
 import WelcomeSection from "./WelcomeSection";
 import MessageInput from "./MessageInput";
 import ActionButtons from "./ActionButtons";
-import { ConversationData, createConversation } from "@/api/conversation";
+import { createConversation } from "@/api/conversation";
 import { uploadImage } from "@/api/chat";
 import { X, Upload, Play } from "lucide-react"
 
 
 interface MainContentProps {
-  activeTitle?: string;
-  onNewConversation:(newConv: ConversationData, uploadedImage?: string, initialMessage?: string) => void;
+  onNewConversation:(newConv, uploadedImage?: string, initialMessage?: string) => void;
 }
 
 const MainContent = ({ 
-  activeTitle = "我是你的AI教师助理TeacherA，可以帮你备课",
   onNewConversation
 }: MainContentProps) => {
   const [message, setMessage] = useState("")
@@ -25,10 +23,10 @@ const MainContent = ({
     if (message.trim() !== '') {
       console.log(`发送消息: ${message}`);
       const newConv = await createConversation({
-        title: message.length > 20 ? message.substring(0, 20) + '...' : message,
+        title: message,
       });
       // 传递初始消息给父组件
-      onNewConversation(newConv, message.trim());
+      onNewConversation(newConv, message);
       setMessage('');
     }
   };
@@ -127,7 +125,7 @@ const MainContent = ({
 
   return (
     <main className="flex-1 flex flex-col h-full justify-center p-8">
-      <WelcomeSection title={activeTitle === '新对话'? '我是你的AI教师助理TeacherA，可以帮你备课':activeTitle} />
+      <WelcomeSection title='我是你的AI教师助理TeacherA，可以帮你备课' />
 
       <MessageInput 
         message={message}
