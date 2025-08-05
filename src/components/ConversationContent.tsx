@@ -485,7 +485,6 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
   const handleSendMessage = async (message: string, initImageUrl: string, isInitial = false) => {
     if (!message.trim() || !conversationId) return;
     setLoading(true)
-    debugger
     // 创建临时用户消息
     const tempId = Date.now();
     setMessages(prev => [...prev, {
