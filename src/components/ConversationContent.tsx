@@ -356,6 +356,7 @@ const ConversationContent = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [enableDeepThinking, setEnableDeepThinking] = useState(true);
   const lastReasoningUpdateRef = useRef<number>(Date.now());
+  const [loading, setLoading] = useState(false);
 
   // 在现有的 useRef 声明后添加
   const prevHtmlContentRef = useRef<string>("")
@@ -438,20 +439,20 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
         
         // 合并reasoning内容（前两条）
         let reasoning = '';
-        if (aiMessages.length >= 2) {
-          reasoning = aiMessages[0].message + '\n\n' + aiMessages[1].message;
+        if (aiMessages.length >= 1) {
+          reasoning = aiMessages[0].message
         }
         
         // 获取answer内容（第三条）
         let answer = '';
-        if (aiMessages.length >= 3) {
-          answer = aiMessages[2].message;
+        if (aiMessages.length >= 2) {
+          answer = aiMessages[1].message;
         }
         
         // 获取htmlContent内容（第四条）
         let htmlContent = '';
-        if (aiMessages.length >= 4) {
-          htmlContent = aiMessages[3].message;
+        if (aiMessages.length >= 3) {
+          htmlContent = aiMessages[2].message;
         }
         
         // 计算执行时间
@@ -483,7 +484,8 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
   // 合并后的统一消息发送函数
   const handleSendMessage = async (message: string, initImageUrl: string, isInitial = false) => {
     if (!message.trim() || !conversationId) return;
-    
+    setLoading(true)
+    debugger
     // 创建临时用户消息
     const tempId = Date.now();
     setMessages(prev => [...prev, {
@@ -528,6 +530,7 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
         signal: controller.signal
       });
       const assistantId = Date.now();
+      setLoading(false)
       setMessages(prev => [...prev, {
         id: assistantId,
         type: 'assistant',
@@ -835,7 +838,7 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
       {/* 对话内容 */}
       <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
         <ScrollArea ref={scrollRef} className="flex-1 p-4">
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="max-w-4xl mx-auto space-y-6"> 
             {messages && messages.map((message) => (
               message &&
               <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -856,7 +859,7 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-1">
+                  <div className="flex-1"> 
                     {/* 深度思考部分 */}
                     {message.reasoning && (
                       <div className="max-w-[95%] w-full mb-3">
@@ -956,8 +959,20 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
                   </div>
                 )}
               </div>
-            ),
+            )
             )}
+            {loading && (
+              <div className="flex justify-start">
+                  <div className="flex-1">
+                    <div className="max-w-[95%] order-1 mt-2">
+                      <div className="p-4 rounded-lg relative bg-white text-gray-900 shadow-sm flex items-center">
+                        <Loader2 className="w-4 h-4 animate-spin m-0.5" />
+                        <span className="ml-1">问题解析中...</span>
+                      </div>
+                    </div>
+                  </div>
+              </div>
+            )}        
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
