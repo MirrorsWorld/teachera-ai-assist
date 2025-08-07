@@ -445,9 +445,9 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
         
         // 获取answer内容（第三条）
         let answer = '';
-        if (aiMessages.length >= 2) {
-          answer = aiMessages[1].message;
-        }
+        // if (aiMessages.length >= 2) {
+        //   answer = aiMessages[1].message;
+        // }
         
         // 获取htmlContent内容（第四条）
         let htmlContent = '';
