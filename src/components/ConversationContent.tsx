@@ -11,6 +11,7 @@ import remarkGfm from "remark-gfm"
 import useHtmlStore from "@/store/store"
 import { ReasoningBlock } from "./ui/reasoning-block"
 import FileModal from "./ui/file-modal"
+import { log } from "console"
 
 // 扩展 ConversationContentProps 接口
 // interface ExtendedConversationContentProps extends ConversationContentProps {
@@ -426,6 +427,7 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
           id: item.id,
           type: 'user',
           answer: item.message,
+          imageUrl: item.resource[0]?.url,
           timestamp: new Date(item.createdAt).toLocaleTimeString('zh-CN', { 
             hour: '2-digit', 
             minute: '2-digit' 
@@ -482,7 +484,7 @@ const convertApiDataToMessages = (apiData: any): MessageData[] => {
 };
 
   // 合并后的统一消息发送函数
-  const handleSendMessage = async (message: string, initImageUrl: string, isInitial = false) => {
+  const handleSendMessage = async (message: string, initImageUrl: string, isInitial: boolean) => {
     if (!message.trim() || !conversationId) return;
     setLoading(true)
     // 创建临时用户消息

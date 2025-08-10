@@ -38,12 +38,6 @@ const Index = () => {
     console.log("图片地址", initialImgurl);
 
     try {
-      setViewMode("conversation")
-      setSelectedConversationId(newConv.id)
-      const selectedConversation = await getConversation(newConv.id)
-      console.log("selectedConversation", selectedConversation);
-      conversationListRef.current.fetchData();
-      
       // 保存初始消息，用于自动发送
       if (initialMsg) {
         setInitialMessage(initialMsg)
@@ -52,6 +46,12 @@ const Index = () => {
       if (initialImgurl) {
         setInitialImgurl(initialImgurl)
       }
+      setViewMode("conversation")
+      setSelectedConversationId(newConv.id)
+      const selectedConversation = await getConversation(newConv.id)
+      console.log("selectedConversation", selectedConversation);
+      conversationListRef.current.fetchData();
+      
       
       toast({ title: "对话创建成功", description: "已准备就绪" })
     } catch (error) {
